@@ -23,9 +23,23 @@ Pobieranie filmów działa 2 etapowo:
   ripvid.sh -p /tmp/jakiskatalog/
   ```
   Podajemy ścieżkę do katalogu gdzie znajduje się nasz plik w którym zapisaliśmy dane ze strony. **Nie podajemy ścieżki do samego pliku**.
+- możemy podać również opcjonalny parametr
+  ```
+  ripvid.sh -p /tmp/jakiskatalog/ -t l
+  ```
+  Parametr ten oznacza typ filmu jaki nas intersuje
+  ```
+  l lub L - lektor
+  n lub N - napisy
+  e lub E - wersja angielska
+  p lub P - wersja polska (dotyczy głównie polskich filmów)
+  ```
+  Domyślnie wyszukiwana i pobierana jest wersja z lektorem.
 - czekamy ;)
   
 Jeśli wszystko pójdzie dobrze to po kilku(-nastu) minutach mamy pobrany film do wskazanego katalogu. 
 
 # Inne
 Do katalogu gdzie wrzucamy pliki z danymi ze strony (w przykładzie powyżej **/tmp/jakiskatalog/**) możemy umieścić dowolną ilość plików do filmów i/lub seriali. Mogą być wymieszane pliki z serialami oraz filmami. Nieistotne są też ich nazwy/rozszerzenia. Ważne jest tylko to by w jednym pliku znajdowały się dane do jednego odcinka serialu / jednego filmu.
+
+Obsługiwane jest pobieranie z najpopularniejszych seriwsów (voe.sx, vidoza.net, dood.yt, vidmoly.to, luluvdo.com) jednakże nie zawsze intersujący nas typ video może być wszędzie dostępny.

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #set -u
 #set -e
-#Zmienne: ścieżka zapisu wideo i dane logowania do filmana 
+#Wyedytuj linię poniżej według własnych potrzeb 
 outDir="${HOME}"/minidlna/torrent/complete
 fTmp='/tmp/filman'
 reqCheck=()
@@ -67,7 +67,7 @@ make_dir(){
 #dood - jw. ale ograniczone pobieranie
 vodCheck(){
 	#Lista w preferowanej kolejności serwisów - do edycji wedle potrzeb
-	vods=( 'voe' 'vidoza' 'voe' 'dood' 'lulu' 'vidmoly' )
+	vods=( 'vidoza' 'voe' 'dood' 'lulu' 'vidmoly' )
 	for v in "${vods[@]}"; do
 		dataLine=$( grep "${mediaType}" "${1}" | grep "${v}" | head -n 1 )
 		if [ ! -z $dataLine ]; then

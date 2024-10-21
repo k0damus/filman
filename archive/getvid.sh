@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 set -u
 set -e
-#Zmienne: ścieżka zapisu wideo i dane logowania do filmana 
+#Edytuj poniższą linię dostosowując do własnych potrzeb 
 outDir="${HOME}"/minidlna/torrent/complete
-fUser='baaa1865913de0'
-fPass='baaa1865913de0@cashbenties.com'
+fUser=REDACTED
+fPass=REDACTED
 #Zmienne: pliki i inne pomocnicze rzeczy
 fTmp='/tmp/filman'
 cookie='/tmp/filman/cookie.txt'
