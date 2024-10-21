@@ -43,3 +43,6 @@ Jeśli wszystko pójdzie dobrze to po kilku(-nastu) minutach mamy pobrany film d
 Do katalogu gdzie wrzucamy pliki z danymi ze strony (w przykładzie powyżej **/tmp/jakiskatalog/**) możemy umieścić dowolną ilość plików do filmów i/lub seriali. Mogą być wymieszane pliki z serialami oraz filmami. Nieistotne są też ich nazwy/rozszerzenia. Ważne jest tylko to by w jednym pliku znajdowały się dane do jednego odcinka serialu / jednego filmu.
 
 Obsługiwane jest pobieranie z najpopularniejszych seriwsów (voe.sx, vidoza.net, dood.yt, vidmoly.to, luluvdo.com) jednakże nie zawsze intersujący nas typ video może być wszędzie dostępny.
+
+# Archive
+Archiwalny elegancki ;) automagiczy skrypt, któ©y działał dopóki filman nie włączył reCaptcha ¯\_(ツ)_/¯
