@@ -31,6 +31,7 @@ Pobieranie filmów działa 2 etapowo:
   ```
   l lub L - lektor
   n lub N - napisy
+  d lub D - dubbing
   e lub E - wersja angielska
   p lub P - wersja polska (dotyczy głównie polskich filmów)
   ```
