@@ -45,4 +45,4 @@ Do katalogu gdzie wrzucamy pliki z danymi ze strony (w przykładzie powyżej **/
 Obsługiwane jest pobieranie z najpopularniejszych seriwsów (voe.sx, vidoza.net, dood.yt, vidmoly.to, luluvdo.com) jednakże nie zawsze intersujący nas typ video może być wszędzie dostępny.
 
 # Archive
-Archiwalny elegancki ;) automagiczy skrypt, któ©y działał dopóki filman nie włączył reCaptcha ¯\_(ツ)_/¯
+Archiwalny elegancki ;) automagiczy skrypt, któ©y działał dopóki filman nie włączył reCaptcha ¯\\_(ツ)_/¯
