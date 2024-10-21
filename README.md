@@ -27,14 +27,14 @@ Pobieranie filmów działa 2 etapowo:
   ```
   ripvid.sh -p /tmp/jakiskatalog/ -t l
   ```
-  Parametr ten oznacza typ filmu jaki nas intersuje
+  Parametr ten oznacza typ filmu jaki nas interesuje
   ```
   l lub L - lektor
   n lub N - napisy
   e lub E - wersja angielska
   p lub P - wersja polska (dotyczy głównie polskich filmów)
   ```
-  Domyślnie wyszukiwana i pobierana jest wersja z lektorem.
+  Domyślnie wyszukiwana i pobierana jest wersja z lektorem. Występują również jakieś niszowe opcje typu Dubbing_Kino itd., ale raczej nie są one warte uwagi ;)
 - czekamy ;)
   
 Jeśli wszystko pójdzie dobrze to po kilku(-nastu) minutach mamy pobrany film do wskazanego katalogu. 
