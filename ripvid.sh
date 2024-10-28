@@ -67,7 +67,7 @@ make_dir(){
 #dood - jw. ale ograniczone pobieranie
 vodCheck(){
 	#Lista w preferowanej kolejności serwisów - do edycji wedle potrzeb
-	vods=( 'vidoza' 'voe' 'dood' 'lulu' 'vidmoly' )
+	vods=( 'vidoza' 'voe' 'lulu' 'vidmoly' )
 	for v in "${vods[@]}"; do
 		dataLine=$( grep "${mediaType}" "${1}" | grep "${v}" | head -n 1 )
 		if [ ! -z $dataLine ]; then
@@ -101,23 +101,24 @@ vidoza(){
 	fi
 }
 
-dood(){
-	curlOpts="-H 'Referer: $( printf "%s" "${link}" | sed 's/dood.yt/d0000d.com/g' )'"
-	passUrl=$( curl -sL "${link}" | sed -n 's/.*\(\/pass\_md5\/[-0-9a-z\/]*\).*$/\1/p')
-	tokenUrl=$( printf "%s" "${passUrl}" | cut -d '/' -f4 )
-	tempUrl=$( curl -sL $( printf "https://d0000d.com%s" "${passUrl}" ) "${curlOpts}" )
-	randomString=$( cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 10 | head -n 1 )
-	validUrl=$( printf "%s%s?token=%s&expiry=$(date +%s)" "${tempUrl}" "${randomString}" "${tokenUrl}" )
-
-	if [ ! -z "${seriesTitle}" ] && [ ! -z "${seasonNumber}" ] && [ ! -z "${episodeTitle}" ]; then
-		curl -L "${validUrl}" "${curlOpts}" -o "${outDir}"/"${seriesTitle}"/"${seasonNumber}"/"${fullEpisodeTitle}".ts
-		printf "\n\nFilm zapisany w %s/%s/%s/%s.ts \n\n" "${outDir}" "${seriesTitle}" "${seasonNumber}" "${fullEpisodeTitle}"
-	else
-		[ ! -d "${outDir}"/"${title}" ] && mkdir -p "${outDir}"/"${title}"
-		curl -L "${validUrl}" "${curlOpts}" -o "${outDir}"/"${title}"/"${title}".ts
-		printf "\n\nFilm zapisany w %s/%s/%s.ts \n\n" "${outDir}" "${title}" "${title}"
-	fi
-}
+#Aktualnie pobranie linku do filmu wymaga dodatkowego softu, nie chcemy tego tutaj
+#dood(){
+#	curlOpts="-H 'Referer: $( printf "%s" "${link}" | sed 's/dood.yt/d0000d.com/g' )'"
+#	passUrl=$( curl -sL "${link}" | sed -n 's/.*\(\/pass\_md5\/[-0-9a-z\/]*\).*$/\1/p')
+#	tokenUrl=$( printf "%s" "${passUrl}" | cut -d '/' -f4 )
+#	tempUrl=$( curl -sL $( printf "https://d0000d.com%s" "${passUrl}" ) "${curlOpts}" )
+#	randomString=$( cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 10 | head -n 1 )
+#	validUrl=$( printf "%s%s?token=%s&expiry=$(date +%s)" "${tempUrl}" "${randomString}" "${tokenUrl}" )
+#
+#	if [ ! -z "${seriesTitle}" ] && [ ! -z "${seasonNumber}" ] && [ ! -z "${episodeTitle}" ]; then
+#		curl -L "${validUrl}" "${curlOpts}" -o "${outDir}"/"${seriesTitle}"/"${seasonNumber}"/"${fullEpisodeTitle}".ts
+#		printf "\n\nFilm zapisany w %s/%s/%s/%s.ts \n\n" "${outDir}" "${seriesTitle}" "${seasonNumber}" "${fullEpisodeTitle}"
+#	else
+#		[ ! -d "${outDir}"/"${title}" ] && mkdir -p "${outDir}"/"${title}"
+#		curl -L "${validUrl}" "${curlOpts}" -o "${outDir}"/"${title}"/"${title}".ts
+#		printf "\n\nFilm zapisany w %s/%s/%s.ts \n\n" "${outDir}" "${title}" "${title}"
+#	fi
+#}
 
 lulu(){
 	curlOpts=''
@@ -128,7 +129,7 @@ lulu(){
 }
 
 vidmoly(){
-	curlOpts='-H "Referef: https://vidmoly.to/"'
+	curlOpts='-H "Referer: https://vidmoly.to/"'
 	fullURL=$( wget "${link}" -qO- | grep sources: | cut -d '"' -f2 )
 	mainURL=$( printf "%s" "${fullURL}" |  tr -d ',' | sed -n 's/\(^.*\)\.urlset.*/\1/p' )
 	partsPATH=$( curl -sL "${fullURL}" "${curlOpts}" | grep index )
