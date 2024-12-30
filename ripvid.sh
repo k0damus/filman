@@ -67,7 +67,7 @@ make_dir(){
 #dood - jw. ale ograniczone pobieranie
 vodCheck(){
 	#Lista w preferowanej kolejności serwisów - do edycji wedle potrzeb
-	vods=( 'vidoza' 'voe' 'lulu' 'vidmoly' )
+	vods=( 'voe' 'vidoza' 'lulu' 'vidmoly' )
 	for v in "${vods[@]}"; do
 		dataLine=$( grep "${mediaType}" "${1}" | grep "${v}" | head -n 1 )
 		if [ ! -z $dataLine ]; then
@@ -81,15 +81,21 @@ vodCheck(){
 #Obsługa pobierania z różnych VOD
 voe(){
 	curlOpts=''
-	followUp=$( curl -sL "${link}" | sed -n "s/^.*\(https.*\)'.*$/\1/p" | head -n 1 ) #1. Obejście, żeby z linka voe dostać się do właściwej strony voe.
-	fullURL=$( curl -sL "${followUp}" | grep nodeDetails | cut -d '"' -f4) #2. Z wyniku tego wyżej wyciągamy właściwy link do listy m3u8.
+	followUp=$( curl -sL "${link}" | sed -n "s/^.*\(https.*\)'.*$/\1/p" | head -n 1 ) #1. Obejście, żeby z linka voe dostać się do właściwej strony voe
+	#echo "followUP: " $followUp
+	#fullURL=$( curl -sL "${followUp}" | grep nodeDetails | cut -d '"' -f4) #2. Z wyniku tego wyżej wyciągamy właściwy link do listy m3u8.
+	fullURL=$( curl -sL "${followUp}" | grep "hls':" | cut -d "'" -f4 | base64 -d) #2. Z wyniku tego wyżej wyciągamy właściwy link do listy m3u8.
+	#echo "fullURL: " $fullURL
 	mainURL=$( printf "%s" "${fullURL}" | sed -n 's/\(^.*\)\/master.*$/\1/p') #3. Link do segmentów to  2 części: link główny + linki do segmentów. Tutaj robimy część główną - z wyniku z poprzeniego polecenia.
+	#echo "mainURL: " $mainURL
 	partsPATH=$( curl -sL "${fullURL}" | grep ^index ) #4. Wyszukujemy link do "playlisty".
+	#echo "partsPATH: " $partsPATH
 	curl -sL "${mainURL}"/"${partsPATH}" | grep -v ^# > "${partsList}" #5. Łącząc wyniki kroku (3) i (4) mamy link do playlisty, z której wybieramy segmenty.
 }
 
 vidoza(){
 	curlOpts=''
+	[[ $(curl -sL "${link}" | grep 'File was deleted') ]] && printf "Wygląda na to, że plik został usunięty.\n" && exit 100
 	videoURL=$( curl -sL "${link}" | grep sourcesCode | cut -d '"' -f2 )
 	if [ ! -z "${seriesTitle}" ] && [ ! -z "${seasonNumber}" ] && [ ! -z "${episodeTitle}" ]; then
 		curl "${videoURL}" -o "${outDir}"/"${seriesTitle}"/"${seasonNumber}"/"${fullEpisodeTitle}".mp4
@@ -101,39 +107,46 @@ vidoza(){
 	fi
 }
 
-#Aktualnie pobranie linku do filmu wymaga dodatkowego softu, nie chcemy tego tutaj
-#dood(){
-#	curlOpts="-H 'Referer: $( printf "%s" "${link}" | sed 's/dood.yt/d0000d.com/g' )'"
-#	passUrl=$( curl -sL "${link}" | sed -n 's/.*\(\/pass\_md5\/[-0-9a-z\/]*\).*$/\1/p')
-#	tokenUrl=$( printf "%s" "${passUrl}" | cut -d '/' -f4 )
-#	tempUrl=$( curl -sL $( printf "https://d0000d.com%s" "${passUrl}" ) "${curlOpts}" )
-#	randomString=$( cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 10 | head -n 1 )
-#	validUrl=$( printf "%s%s?token=%s&expiry=$(date +%s)" "${tempUrl}" "${randomString}" "${tokenUrl}" )
-#
-#	if [ ! -z "${seriesTitle}" ] && [ ! -z "${seasonNumber}" ] && [ ! -z "${episodeTitle}" ]; then
-#		curl -L "${validUrl}" "${curlOpts}" -o "${outDir}"/"${seriesTitle}"/"${seasonNumber}"/"${fullEpisodeTitle}".ts
-#		printf "\n\nFilm zapisany w %s/%s/%s/%s.ts \n\n" "${outDir}" "${seriesTitle}" "${seasonNumber}" "${fullEpisodeTitle}"
-#	else
-#		[ ! -d "${outDir}"/"${title}" ] && mkdir -p "${outDir}"/"${title}"
-#		curl -L "${validUrl}" "${curlOpts}" -o "${outDir}"/"${title}"/"${title}".ts
-#		printf "\n\nFilm zapisany w %s/%s/%s.ts \n\n" "${outDir}" "${title}" "${title}"
-#	fi
-#}
+:<<'DOODEND'
+Aktualnie pobranie linku do filmu wymaga dodatkowego softu, nie chcemy tego tutaj
+dood(){
+	curlOpts="-H 'Referer: $( printf "%s" "${link}" | sed 's/dood.yt/d0000d.com/g' )'"
+	passUrl=$( curl -sL "${link}" | sed -n 's/.*\(\/pass\_md5\/[-0-9a-z\/]*\).*$/\1/p')
+	tokenUrl=$( printf "%s" "${passUrl}" | cut -d '/' -f4 )
+	tempUrl=$( curl -sL $( printf "https://d0000d.com%s" "${passUrl}" ) "${curlOpts}" )
+	randomString=$( cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 10 | head -n 1 )
+	validUrl=$( printf "%s%s?token=%s&expiry=$(date +%s)" "${tempUrl}" "${randomString}" "${tokenUrl}" )
+
+	if [ ! -z "${seriesTitle}" ] && [ ! -z "${seasonNumber}" ] && [ ! -z "${episodeTitle}" ]; then
+		curl -L "${validUrl}" "${curlOpts}" -o "${outDir}"/"${seriesTitle}"/"${seasonNumber}"/"${fullEpisodeTitle}".ts
+		printf "\n\nFilm zapisany w %s/%s/%s/%s.ts \n\n" "${outDir}" "${seriesTitle}" "${seasonNumber}" "${fullEpisodeTitle}"
+	else
+		[ ! -d "${outDir}"/"${title}" ] && mkdir -p "${outDir}"/"${title}"
+		curl -L "${validUrl}" "${curlOpts}" -o "${outDir}"/"${title}"/"${title}".ts
+		printf "\n\nFilm zapisany w %s/%s/%s.ts \n\n" "${outDir}" "${title}" "${title}"
+	fi
+}
+DOODEND
 
 lulu(){
-	curlOpts=''
-	fullURL=$( curl -sL "${link}" | grep sources | cut -d '"' -f2)
+	curlOpts=( "-H" "User-Agent: Mozilla/5.0" )
+	echo $link
+	fullURL=$( curl -sL "${link}" "${curlOpts[@]}" | grep sources | cut -d '"' -f2)
+	echo "fullURL: " $fullURL
 	mainURL=$( printf "%s" "${fullURL}" | sed -n 's/\(^.*\)\/master.*$/\1/p' )
+	echo "mainURL: " $mainURL
 	partsPATH=$( curl -sL "${fullURL}" | grep index )
+#	curl -sL "${fullURL}" | grep index
+	echo "partsPATH: " $partsPATH
 	curl -sL "${partsPATH}" | sed -n 's/^.*\(seg.*$\)/\1/p' > "${partsList}"
 }
 
 vidmoly(){
-	curlOpts='-H "Referer: https://vidmoly.to/"'
+	curlOpts=( "-H" "User-Agent: Mozilla/5.0" "-H" "Referer: https://vidmoly.to/" )
 	fullURL=$( wget "${link}" -qO- | grep sources: | cut -d '"' -f2 )
 	mainURL=$( printf "%s" "${fullURL}" |  tr -d ',' | sed -n 's/\(^.*\)\.urlset.*/\1/p' )
-	partsPATH=$( curl -sL "${fullURL}" "${curlOpts}" | grep index )
-	curl -sL "${partsPATH}" "${curlOpts}" | sed -n 's/^.*\(seg.*$\)/\1/p' > "${partsList}"
+	partsPATH=$( curl -sL "${fullURL}" "${curlOpts[@]}" | grep index | head -n1 )
+	curl -sL "${partsPATH}" "${curlOpts[@]}" | sed -n 's/^.*\(seg.*$\)/\1/p' > "${partsList}"
 }
 
 #Obsługa pobrania POJEDYNCZEGO filmu
@@ -144,7 +157,7 @@ getVideo(){
 			while read line ; do
 		        nazwa=$(printf "%03d" "${count}");
 				printf "Pobieram część %s z %s\n" "${count}" "${ilosc}"
-				curl -sL "${mainURL}"/"${line}" "${curlOpts}" -o "${tmpDir}"/"${nazwa}".ts
+				curl -sL "${mainURL}"/"${line}" "${curlOpts[@]}" -o "${tmpDir}"/"${nazwa}".ts
 		        count=$((count+1))
 			done<"${partsList}"
 
@@ -175,19 +188,17 @@ getSeries(){
 			while read line ; do
 					nazwa=$(printf "%03d" "${count}");
 					printf "Pobieram część %s z %s\n" "${count}" "${ilosc}"
-					curl -sL "${mainURL}"/"${line}" "${curlOpts}" -o "${tmpDir}"/"${nazwa}".ts
+					curl -sL "${mainURL}"/"${line}" "${curlOpts[@]}" -o "${tmpDir}"/"${nazwa}".ts
 					count=$((count+1))
 			done<"${partsList}"
 
 		cat $(ls "${tmpDir}"/*.ts) > "${outDir}"/"${seriesTitle}"/"${seasonNumber}"/"${fullEpisodeTitle}".ts 
 		printf "\n\nFilm zapisany w %s/%s/%s/%s.ts \n\n" "${outDir}" "${seriesTitle}" "${seasonNumber}" "${fullEpisodeTitle}"
 	else
-		printf "Plik %s wygląda na pusty!" "${partsList}"
+		printf "Plik %s wygląda na pusty!\n" "${partsList}"
 		exit 21
 	fi
 }
-
-
 
 #CZĘŚĆ GŁÓWNA
 #####################################################
@@ -208,7 +219,7 @@ if [ -z "${seriesCheck}" ]; then
         if [[ "${dataLine}" =~ $pattern ]]; then
                title="${BASH_REMATCH[1]}"
         else
-                printf "Nie znaleziono danych dla %s. Prawdopodobnie brak źródeł dla wersji: %s" "${title}" "${mediaType}"
+                printf "Nie znaleziono danych dla %s. Prawdopodobnie brak źródeł dla wersji: %s \n" "${title}" "${mediaType}"
                 exit 30
         fi
 
@@ -227,9 +238,9 @@ else
 	pattern='^.*Serial@(.*)@_(s[0-9]{2})_(e[0-9]{2})@(.*$)'
 	if [[ "${dataLine}" =~ $pattern ]]; then
 		seriesTitle="${BASH_REMATCH[1]}"
-                seasonNumber="${BASH_REMATCH[2]}"
-                episodeNumber="${BASH_REMATCH[3]}"
-                episodeTitle="${BASH_REMATCH[4]}"
+        seasonNumber="${BASH_REMATCH[2]}"
+        episodeNumber="${BASH_REMATCH[3]}"
+        episodeTitle="${BASH_REMATCH[4]}"
 		fullEpisodeTitle="["$seasonNumber$episodeNumber"]_"$episodeTitle
 	else
 		printf "Nie znaleziono danych dla %s. Prawdopodobnie brak źródeł dla wersji: %s" "${fullEpisodeTitle}" "${mediaType}"
