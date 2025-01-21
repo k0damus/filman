@@ -25,7 +25,7 @@ fi
 while getopts ":p:t:" opt; do
 	case "${opt}" in
 		p) path="${OPTARG}" ;;
-        	t) mType="${OPTARG}" ;;
+		t) mType="${OPTARG}" ;;
 		:) printf "Opcja -%s wymaga argumentu.\n" "${OPTARG}" ; exit 12 ;;
 		?) printf "Niewłaściwa opcja: -%s.\n" "${OPTARG}" ; exit 13 ;;
 	esac
