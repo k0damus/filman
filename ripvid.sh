@@ -25,7 +25,7 @@ fi
 while getopts ":p:t:" opt; do
 	case "${opt}" in
 		p) path="${OPTARG}" ;;
-        t) mType="${OPTARG}" ;;
+        	t) mType="${OPTARG}" ;;
 		:) printf "Opcja -%s wymaga argumentu.\n" "${OPTARG}" ; exit 12 ;;
 		?) printf "Niewłaściwa opcja: -%s.\n" "${OPTARG}" ; exit 13 ;;
 	esac
@@ -47,9 +47,9 @@ esac
 
 #Na początek: łapiemy CTRL + C i usuwamy nasz katalog w razie czego
 cleanup() {
-    printf "\nSprzątamy...\n"
-    rm -rf "${fTmp}"
-    exit 1
+	printf "\nSprzątamy...\n"
+	rm -rf "${fTmp}"
+	exit 1
 }
 
 trap "cleanup" SIGINT SIGTERM
@@ -69,7 +69,7 @@ vodCheck(){
 	movies=($( cat "${file}" | cut -d '@' -f 3- | sort -u  ))
 	lines=()
 	for m in "${movies[@]}"; do
-    tempLine=($( cat "${file}" | grep "${m}" | grep "${mediaType}" | grep -E "voe|vidoza|vidmoly" | head -n 1 ))
+   	tempLine=($( cat "${file}" | grep "${m}" | grep "${mediaType}" | grep -E "voe|vidoza|vidmoly" | head -n 1 ))
 	    if [ ! -z $tempLine ]; then
     	    myVod=$( printf "%s" "${tempLine}" | sed -n 's/^.*\/\/\(.*\)\..*$/\1/p' )
             link=$( printf "%s" "${tempLine}" | cut -d "@" -f1 )
@@ -100,11 +100,11 @@ vidoza(){
 	videoURL=$( curl -sL "${link}" | grep sourcesCode | cut -d '"' -f2 )
 	if [ ! -z "${seriesTitle}" ] && [ ! -z "${seasonNumber}" ] && [ ! -z "${episodeTitle}" ]; then
 		curl "${videoURL}" -o "${outDir}"/"${seriesTitle}"/"${seasonNumber}"/"${fullEpisodeTitle}".mp4
-        printf "\n\nFilm zapisany w %s/%s/%s/%s.mp4 \n\n" "${outDir}" "${seriesTitle}" "${seasonNumber}" "${fullEpisodeTitle}"
+        	printf "\n\nFilm zapisany w %s/%s/%s/%s.mp4 \n\n" "${outDir}" "${seriesTitle}" "${seasonNumber}" "${fullEpisodeTitle}"
 	else
 		[ ! -d "${outDir}"/"${title}" ] && mkdir -p "${outDir}"/"${title}"
 		curl "${videoURL}" -o "${outDir}"/"${title}"/"${title}".mp4
-        printf "\n\nFilm zapisany w %s/%s/%s.mp4 \n\n" "${outDir}" "${title}" "${title}"
+        	printf "\n\nFilm zapisany w %s/%s/%s.mp4 \n\n" "${outDir}" "${title}" "${title}"
 	fi
 }
 
