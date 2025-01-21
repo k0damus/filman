@@ -48,4 +48,4 @@ UPDATE: dodana możliwość wrzucenia wszystkiego do jednego pliku. Mogą być w
 Obsługiwane jest pobieranie z najpopularniejszych seriwsów (voe.sx, vidoza.net, dood.yt, vidmoly.to) jednakże nie zawsze intersujący nas typ video może być wszędzie dostępny.
 
 # Archive
-Archiwalny, elegancki ;) automagiczy skrypt, który działał dopóki filman nie włączył reCaptcha ¯\\\_(ツ)_/¯
+Archiwalny, elegancki ;) automagiczy skrypt, który działał dopóki filman nie włączył reCaptcha ¯\\\_(ツ)_/¯. Mogę udostępnić na życzenie.
