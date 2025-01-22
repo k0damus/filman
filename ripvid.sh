@@ -207,7 +207,7 @@ for file in "${path}"*; do
 				make_dir "${title}"
 				mkdir -p "${outDir}/${title}"
 				printf "Pobieram %s z %s...\n\n" "${title}" "${myVod}"
-				if [ "${myVod}" == 'dood' ] || [ "${myVod}" == 'vidoza' ] ; then
+				if [ "${myVod}" == 'vidoza' ] ; then
 					"${myVod}"
 				else
 					"${myVod}"
@@ -235,7 +235,7 @@ for file in "${path}"*; do
 				cp "${file}" "${tmpDir}"
 				mkdir -p "${outDir}/${seriesTitle}/${seasonNumber}"
 				printf "Pobieram %s - %s z %s...\n\n" "${seriesTitle}" "${episodeTitle}" "${myVod}"
-				if [ "${myVod}" == 'dood' ] || [ "${myVod}" == 'vidoza' ] ; then
+				if [ "${myVod}" == 'vidoza' ] ; then
 					"${myVod}"
 				else
 					"${myVod}"
