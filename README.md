@@ -45,7 +45,7 @@ Do katalogu gdzie wrzucamy pliki z danymi ze strony (w przykładzie powyżej **/
 
 UPDATE: dodana możliwość wrzucenia wszystkiego do jednego pliku. Mogą być wymieszane dane serialowe oraz filmowe w jednym lub wielu plikach.
 
-Obsługiwane jest pobieranie z najpopularniejszych seriwsów (voe.sx, vidoza.net, dood.yt, vidmoly.to) jednakże nie zawsze intersujący nas typ video może być wszędzie dostępny.
+Obsługiwane jest pobieranie z najpopularniejszych seriwsów (voe.sx, vidoza.net, vidmoly.to) jednakże nie zawsze intersujący nas typ video może być wszędzie dostępny.
 
 # Archive
 Archiwalny, elegancki ;) automagiczy skrypt, który działał dopóki filman nie włączył reCaptcha ¯\\\_(ツ)_/¯. Mogę udostępnić na życzenie.
