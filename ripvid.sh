@@ -38,11 +38,11 @@ if [ -z "${path}" ] ; then
 fi
 
 case "${mType}" in
-        n|N) printf "Wybrano opcję: Napisy.\n" && mediaType='Napisy' ;;
-        p|P) printf "Wybrano opcję: PL.\n" && mediaType='PL' ;;
-        d|D) printf "Wybrano opcję: Dubbing.\n" && mediaType='Dubbing' ;;
-        e|E) printf "Wybrano opcję: ENG.\n" && mediaType='ENG' ;;
-        *)   printf "Wybrano opcję: Lektor.\n" && mediaType='Lektor' ;;
+		n|N) printf "Wybrano opcję: Napisy.\n" && mediaType='Napisy' ;;
+		p|P) printf "Wybrano opcję: PL.\n" && mediaType='PL' ;;
+		d|D) printf "Wybrano opcję: Dubbing.\n" && mediaType='Dubbing' ;;
+		e|E) printf "Wybrano opcję: ENG.\n" && mediaType='ENG' ;;
+		*)   printf "Wybrano opcję: Lektor.\n" && mediaType='Lektor' ;;
 esac
 
 #Na początek: łapiemy CTRL + C i usuwamy nasz katalog w razie czego
@@ -69,18 +69,18 @@ vodCheck(){
 	movies=($( cat "${file}" | cut -d '@' -f 3- | sort -u  ))
 	lines=()
 	for m in "${movies[@]}"; do
-   	tempLine=($( cat "${file}" | grep "${m}" | grep "${mediaType}" | grep -E "voe|vidoza|vidmoly" | head -n 1 ))
-	    if [ ! -z $tempLine ]; then
-    	    myVod=$( printf "%s" "${tempLine}" | sed -n 's/^.*\/\/\(.*\)\..*$/\1/p' )
-            link=$( printf "%s" "${tempLine}" | cut -d "@" -f1 )
+	tempLine=($( cat "${file}" | grep "${m}" | grep "${mediaType}" | grep -E "voe|vidoza|vidmoly" | head -n 1 ))
+		if [ ! -z $tempLine ]; then
+			myVod=$( printf "%s" "${tempLine}" | sed -n 's/^.*\/\/\(.*\)\..*$/\1/p' )
+			link=$( printf "%s" "${tempLine}" | cut -d "@" -f1 )
 			lines+=( "${tempLine}" )
-        else
-            printf "Brak źródeł dla wybranej wersji: %s \n" "${mediaType}"
-            printf "Dostępne możliwości do wyboru to: \n"
-            versions=($( awk -F'@' '{ print $2 }' "${1}" | sort -u ))
-            printf "[%s] \n" "${versions[@]}"
+		else
+			printf "Brak źródeł dla wybranej wersji: %s \n" "${mediaType}"
+			printf "Dostępne możliwości do wyboru to: \n"
+			versions=($( awk -F'@' '{ print $2 }' "${1}" | sort -u ))
+			printf "[%s] \n" "${versions[@]}"
 			break
-        fi
+		fi
 	done
 }
 
@@ -135,10 +135,10 @@ getVideo(){
 		ilosc=$( cat "${partsList}" | wc -l )
 		count=1;
 			while read line ; do
-		        nazwa=$(printf "%03d" "${count}");
+				nazwa=$(printf "%03d" "${count}");
 				printf "Pobieram część %s z %s\n" "${count}" "${ilosc}"
 				curl -sL "${mainURL}"/"${line}" "${curlOpts[@]}" -o "${tmpDir}"/"${nazwa}".ts
-		        count=$((count+1))
+				count=$((count+1))
 			done<"${partsList}"
 
 		cat $(ls "${tmpDir}"/*.ts) > "${outDir}"/"${title}"/"${title}".ts 
