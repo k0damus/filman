@@ -38,11 +38,11 @@ if [ -z "${path}" ] ; then
 fi
 
 case "${mType}" in
-		n|N) printf "Wybrano opcję: Napisy.\n" && mediaType='Napisy' ;;
-		p|P) printf "Wybrano opcję: PL.\n" && mediaType='PL' ;;
-		d|D) printf "Wybrano opcję: Dubbing.\n" && mediaType='Dubbing' ;;
-		e|E) printf "Wybrano opcję: ENG.\n" && mediaType='ENG' ;;
-		*)   printf "Wybrano opcję: Lektor.\n" && mediaType='Lektor' ;;
+	n|N) printf "Wybrano opcję: Napisy.\n" && mediaType='Napisy' ;;
+	p|P) printf "Wybrano opcję: PL.\n" && mediaType='PL' ;;
+	d|D) printf "Wybrano opcję: Dubbing.\n" && mediaType='Dubbing' ;;
+	e|E) printf "Wybrano opcję: ENG.\n" && mediaType='ENG' ;;
+	*)   printf "Wybrano opcję: Lektor.\n" && mediaType='Lektor' ;;
 esac
 
 #Na początek: łapiemy CTRL + C i usuwamy nasz katalog w razie czego
