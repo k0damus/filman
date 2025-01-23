@@ -2,7 +2,7 @@
 // @name         Filman - get links and mediatype
 // @namespace    http://tampermonkey.net/
 // @version      2024-10-18
-// @description  Pobieranie linkĂłw z filmana
+// @description  Pobieranie linkow z filmana
 // @author       You
 // @match        https://filman.cc/*
 // @icon         data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==
@@ -27,7 +27,7 @@ if (result) {
     let s = document.querySelectorAll('h2')
     let seriesTitle = s[0].innerText.replace(/ /g,'_').replace(/[:-]/g,"").replace(/\//g,"").replace(/__/g,"_");
 
-    // tytul + oznaczenie odcina w formacie: +sXX+eXX+tytul
+    // tytul + oznaczenie odcina
     let t = document.querySelectorAll('h3');
     let episodeTitleTemp = t[0].innerText.replace(/ /g,"_").replace(/\[|\]/g,"");
     let parts = episodeTitleTemp.match(/(s\d{2})(e\d{2})_(.*)/);
@@ -36,7 +36,7 @@ if (result) {
     // linki i typ filmu (lektor/napisy/etc)
     let l = document.getElementById('links');
 
-
+    // obrobka
     for (let i = 0; i < l.getElementsByTagName('tbody')[0].childElementCount; i++){
         let tempLink = l.getElementsByTagName('tbody')[0].children[i].getElementsByTagName('td')[0].querySelector('a').getAttribute('data-iframe');
         let decodedValue = atob(tempLink);
