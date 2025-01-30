@@ -198,7 +198,6 @@ getSeries(){
 		printf "\n\nFilm zapisany w %s/%s/%s/%s.ts \n\n" "${outDir}" "${seriesTitle}" "${seasonNumber}" "${fullEpisodeTitle}"
 	else
 		printf "Plik %s wygląda na pusty!\n" "${partsList}"
-		exit 21
 	fi
 }
 
