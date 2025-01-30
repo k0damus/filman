@@ -33,7 +33,7 @@ done
 
 if [ -z "${path}" ] ; then
 	printf "Brak / za malo danych.\n"
-	printf "Użycie: ./ripvid.sh -f <sciezka_do_katalogu_z_plikiem/plikami>\n"
+	printf "Użycie: ./ripvid.sh -p <sciezka_do_katalogu_z_plikiem/plikami>\n"
 	exit 14
 fi
 
@@ -64,27 +64,40 @@ make_dir(){
 	partsList="${tmpDir}"/parts.txt
 }
 
-#Sprawdzamy z którego serwisu możemy pobrać dany film, tzn. czy w ogóle są dostępne linki. Preferowane voe. Wybieramy tyko pierwszy link ze znalezionych i dopisujemy do lines().
+#Sprawdzamy z którego serwisu możemy pobrać dany film, tzn. czy w ogóle są dostępne linki.
 vodCheck(){
 	movies=($( cat "${file}" | cut -d '@' -f 3- | sort -u  ))
 	lines=()
 	for m in "${movies[@]}"; do
-	tempLine=($( cat "${file}" | grep "${m}" | grep "${mediaType}" | grep -E "voe|vidoza|vidmoly" | head -n 1 ))
-		if [ ! -z $tempLine ]; then
-			myVod=$( printf "%s" "${tempLine}" | sed -n 's/^.*\/\/\(.*\)\..*$/\1/p' )
-			link=$( printf "%s" "${tempLine}" | cut -d "@" -f1 )
-			lines+=( "${tempLine}" )
+		#tu tworzymy tablicę z wszystkimi wynikami pasującymi do: nazwa serialu + typ video + szukany vod
+		testLine=($( cat "${file}" | grep "${m}" | grep "${mediaType}" | grep -E "voe|vidoza|vidmoly" )) #| head -n 1 ))
+		#tutaj iterujemy po całej tablicy i wykonujemy wstępne sprawdzenie czy video wogóle istnieje na tym vod czy nie zostało usunięte
+		if [ ! -z $testLine ]; then
+			for line in "${testLine[@]}"; do
+				testVod=$( printf "%s" "${testLine}" | sed -n 's/^.*\/\/\(.*\)\..*$/\1/p' )
+				testLink=$( printf "%s" "${testLine}" | cut -d "@" -f1 )
+				"${testVod}"Test "${testLink}"
+				#Jeśli nie mamy błędu to dopisujemy do ostatecznej tablicy lines()
+				if [ "${isOK}" = true ]; then
+					line="${testVod}@${line}"
+					lines+=( "${line}" )
+				fi
+			done
 		else
-			printf "Brak źródeł dla wybranej wersji: %s \n" "${mediaType}"
+			printf "Brak źródeł dla tego filmu dla wybranej wersji: %s \n" "${mediaType}"
 			printf "Dostępne możliwości do wyboru to: \n"
 			versions=($( awk -F'@' '{ print $2 }' "${1}" | sort -u ))
 			printf "[%s] \n" "${versions[@]}"
-			break
+#			break
 		fi
 	done
 }
 
-#Obsługa pobierania z różnych VOD
+#Obsługa pobierania z różnych VOD (napierw TEST później funkcja wybierająca właściwe pliki)
+voeTest(){
+	[[ -z $( curl -sL "${1}" | grep '404 - Not found' ) ]] && isOK=true || isOK=false
+}
+
 voe(){
 	curlOpts=''
 	followUp=$( curl -sL "${link}" | sed -n "s/^.*\(https.*\)'.*$/\1/p" | head -n 1 )
@@ -94,9 +107,13 @@ voe(){
 	curl -sL "${mainURL}"/"${partsPATH}" | grep -v ^# > "${partsList}"
 }
 
+vidozaTest(){
+	[[ -z $(curl -sL "${1}" | grep 'File was deleted') ]] && isOk=true || isOK=false
+}
+
 vidoza(){
 	curlOpts=''
-	[[ $(curl -sL "${link}" | grep 'File was deleted') ]] && printf "Wygląda na to, że plik został usunięty.\n" && exit 100
+#	[[ $(curl -sL "${link}" | grep 'File was deleted') ]] && printf "Wygląda na to, że plik został usunięty.\n" && exit 100
 	videoURL=$( curl -sL "${link}" | grep sourcesCode | cut -d '"' -f2 )
 	if [ ! -z "${seriesTitle}" ] && [ ! -z "${seasonNumber}" ] && [ ! -z "${episodeTitle}" ]; then
 		curl "${videoURL}" -o "${outDir}"/"${seriesTitle}"/"${seasonNumber}"/"${fullEpisodeTitle}".mp4
@@ -108,6 +125,20 @@ vidoza(){
 	fi
 }
 
+vidmolyTest(){
+	[[ -z $(curl -sL "${1}" -H "User-Agent: Mozilla/5.0" -H "Referer: https://vidmoly.to/" | grep 'notice.php') ]] && isOK=true || isOK=false
+}
+
+vidmoly(){
+	echo $link
+	curlOpts=( "-H" "User-Agent: Mozilla/5.0" "-H" "Referer: https://vidmoly.to/" )
+	fullURL=$( wget "${link}" -qO- | grep sources: | cut -d '"' -f2 )
+	mainURL=$( printf "%s" "${fullURL}" |  tr -d ',' | sed -n 's/\(^.*\)\.urlset.*/\1/p' )
+	partsPATH=$( curl -sL "${fullURL}" "${curlOpts[@]}" | grep index | head -n1 )
+	curl -sL "${partsPATH}" "${curlOpts[@]}" | sed -n 's/^.*\(seg.*$\)/\1/p' > "${partsList}"
+}
+
+####################################################################################
 #WIP
 lulu(){
 	curlOpts=( "-H" "User-Agent: Mozilla/5.0" )
@@ -120,14 +151,7 @@ lulu(){
 	#echo "partsPATH: " $partsPATH
 	curl -sL "${partsPATH}" | sed -n 's/^.*\(seg.*$\)/\1/p' > "${partsList}"
 }
-
-vidmoly(){
-	curlOpts=( "-H" "User-Agent: Mozilla/5.0" "-H" "Referer: https://vidmoly.to/" )
-	fullURL=$( wget "${link}" -qO- | grep sources: | cut -d '"' -f2 )
-	mainURL=$( printf "%s" "${fullURL}" |  tr -d ',' | sed -n 's/\(^.*\)\.urlset.*/\1/p' )
-	partsPATH=$( curl -sL "${fullURL}" "${curlOpts[@]}" | grep index | head -n1 )
-	curl -sL "${partsPATH}" "${curlOpts[@]}" | sed -n 's/^.*\(seg.*$\)/\1/p' > "${partsList}"
-}
+####################################################################################
 
 #Obsługa pobrania POJEDYNCZEGO filmu
 getVideo(){
@@ -145,7 +169,6 @@ getVideo(){
 		printf "\n\nFilm zapisany w %s/%s/%s.ts \n\n" "${outDir}" "${title}" "${title}"
 	else
 		printf "Plik %s wygląda na pusty!\n" "${partsList}"
-		exit 20
 	fi
 }
 
@@ -217,12 +240,16 @@ for file in "${path}"*; do
 
 		else
 
-			pattern='^.*Serial@(.*)@_(s[0-9]{2})_(e[0-9]{2})@(.*$)'
+			#pattern='^.*Serial@(.*)@_(s[0-9]{2})_(e[0-9]{2})@(.*$)'
+			
+			pattern='^([a-z]*)@(.*)@.*@Serial@(.*)@_(s[0-9]{2})_(e[0-9]{2})@(.*$)'
 			if [[ "${dataLine}" =~ $pattern ]]; then
-				seriesTitle="${BASH_REMATCH[1]}"
-				seasonNumber="${BASH_REMATCH[2]}"
-				episodeNumber="${BASH_REMATCH[3]}"
-				episodeTitle="${BASH_REMATCH[4]}"
+				myVod="${BASH_REMATCH[1]}"
+				link="${BASH_REMATCH[2]}"
+				seriesTitle="${BASH_REMATCH[3]}"
+				seasonNumber="${BASH_REMATCH[4]}"
+				episodeNumber="${BASH_REMATCH[5]}"
+				episodeTitle="${BASH_REMATCH[6]}"
 				fullEpisodeTitle="["$seasonNumber$episodeNumber"]_"$episodeTitle
 			fi
 			
@@ -231,6 +258,7 @@ for file in "${path}"*; do
 			if [ ! -z "${isThere}" ]; then
 				printf "Plik ${isThere##*/} już istnieje: %s \n" "${isThere}"
 			else
+				echo "${myVod}"
 				make_dir "${episodeTitle}"
 				cp "${file}" "${tmpDir}"
 				mkdir -p "${outDir}/${seriesTitle}/${seasonNumber}"
