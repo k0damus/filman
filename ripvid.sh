@@ -74,8 +74,12 @@ vodCheck(){
 		#tutaj iterujemy po całej tablicy i wykonujemy wstępne sprawdzenie czy video wogóle istnieje na tym vod czy nie zostało usunięte
 		if [ ! -z $testLine ]; then
 			for line in "${testLine[@]}"; do
-				testVod=$( printf "%s" "${testLine}" | sed -n 's/^.*\/\/\(.*\)\..*$/\1/p' )
-				testLink=$( printf "%s" "${testLine}" | cut -d "@" -f1 )
+			#echo $line
+				testVod=$( printf "%s" "${line}" | sed -n 's/^.*\/\/\([^.]*\)\..*$/\1/p' )
+				#echo $testVod
+				testLink=$( printf "%s" "${line}" | cut -d "@" -f1 )
+				#echo $testLink
+				#echo "testujemy ${testVod}Test ${testLink}"
 				"${testVod}"Test "${testLink}"
 				#Jeśli nie mamy błędu to dopisujemy do ostatecznej tablicy lines()
 				if [ "${isOK}" = true ]; then
@@ -215,10 +219,13 @@ for file in "${path}"*; do
 		seriesCheck=$( grep 'Serial' <<< "${dataLine}" )
 
 		if [ -z "${seriesCheck}" ]; then
+			#pattern='^.*Film@(.*)'
 
-			pattern='^.*Film@(.*)'
+			pattern='^([a-z]*)@([^@]*)@.*@(.*)'
 			if [[ "${dataLine}" =~ $pattern ]]; then
-				title="${BASH_REMATCH[1]}"
+				myVod="${BASH_REMATCH[1]}"
+				link="${BASH_REMATCH[2]}"
+				title="${BASH_REMATCH[3]}"
 			fi
 
 			isThere=$( ls "${outDir}/${title}/${title}".* 2>/dev/null )
@@ -238,7 +245,6 @@ for file in "${path}"*; do
 			fi
 
 		else
-
 			#pattern='^.*Serial@(.*)@_(s[0-9]{2})_(e[0-9]{2})@(.*$)'
 			
 			pattern='^([a-z]*)@(.*)@.*@Serial@(.*)@_(s[0-9]{2})_(e[0-9]{2})@(.*$)'
