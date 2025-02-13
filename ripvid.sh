@@ -219,8 +219,6 @@ for file in "${path}"*; do
 		seriesCheck=$( grep 'Serial' <<< "${dataLine}" )
 
 		if [ -z "${seriesCheck}" ]; then
-			#pattern='^.*Film@(.*)'
-
 			pattern='^([a-z]*)@([^@]*)@.*@(.*)'
 			if [[ "${dataLine}" =~ $pattern ]]; then
 				myVod="${BASH_REMATCH[1]}"
@@ -244,9 +242,7 @@ for file in "${path}"*; do
 				fi
 			fi
 
-		else
-			#pattern='^.*Serial@(.*)@_(s[0-9]{2})_(e[0-9]{2})@(.*$)'
-			
+		else			
 			pattern='^([a-z]*)@(.*)@.*@Serial@(.*)@_(s[0-9]{2})_(e[0-9]{2})@(.*$)'
 			if [[ "${dataLine}" =~ $pattern ]]; then
 				myVod="${BASH_REMATCH[1]}"
