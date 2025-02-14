@@ -38,12 +38,15 @@ if (result) {
 
     // obrobka
     for (let i = 0; i < l.getElementsByTagName('tbody')[0].childElementCount; i++){
-        let tempLink = l.getElementsByTagName('tbody')[0].children[i].getElementsByTagName('td')[0].querySelector('a').getAttribute('data-iframe');
-        let decodedValue = atob(tempLink);
-        let jsonObject = JSON.parse(decodedValue);
-        let vodLink = jsonObject.src;
-        let mediaType = l.getElementsByTagName('tbody')[0].children[i].getElementsByTagName('td')[1].innerText;
-        allData.push(vodLink+"@"+mediaType+"@"+videoType+"@"+seriesTitle+"@"+episodeTitleFormatted);
+        let test = l.getElementsByTagName('tbody')[0].children[i].children;
+        if ( test.length > 0) {
+            let tempLink = l.getElementsByTagName('tbody')[0].children[i].getElementsByTagName('td')[0].querySelector('a').getAttribute('data-iframe');
+            let decodedValue = atob(tempLink);
+            let jsonObject = JSON.parse(decodedValue);
+            let vodLink = jsonObject.src;
+            let mediaType = l.getElementsByTagName('tbody')[0].children[i].getElementsByTagName('td')[1].innerText;
+            allData.push(vodLink+"@"+mediaType+"@"+videoType+"@"+seriesTitle+"@"+episodeTitleFormatted);
+        }
     }
 
 } else {
