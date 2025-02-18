@@ -78,9 +78,10 @@ vodCheck(){
 				testVod=$( printf "%s" "${line}" | sed -n 's/^.*\/\/\([^.]*\)\..*$/\1/p' )
 				#echo $testVod
 				testLink=$( printf "%s" "${line}" | cut -d "@" -f1 )
-				#echo $testLink
-				#echo "testujemy ${testVod}Test ${testLink}"
-				"${testVod}"Test "${testLink}"
+				echo $testLink
+				echo "testujemy ${testVod}Test ${testLink}"
+#				"${testVod}"Test "${testLink}"
+#				echo ${isOK}
 				#Jeśli nie mamy błędu to dopisujemy do ostatecznej tablicy lines()
 				if [ "${isOK}" = true ]; then
 					line="${testVod}@${line}"
@@ -112,12 +113,11 @@ voe(){
 }
 
 vidozaTest(){
-	[[ -z $(curl -sL "${1}" | grep 'File was deleted') ]] && isOk=true || isOK=false
+	[[ -z $(curl -sL "${1}" | grep 'File was deleted') ]] && isOK=true || isOK=false
 }
 
 vidoza(){
 	curlOpts=''
-#	[[ $(curl -sL "${link}" | grep 'File was deleted') ]] && printf "Wygląda na to, że plik został usunięty.\n" && exit 100
 	videoURL=$( curl -sL "${link}" | grep sourcesCode | cut -d '"' -f2 )
 	if [ ! -z "${seriesTitle}" ] && [ ! -z "${seasonNumber}" ] && [ ! -z "${episodeTitle}" ]; then
 		curl "${videoURL}" -o "${outDir}"/"${seriesTitle}"/"${seasonNumber}"/"${fullEpisodeTitle}".mp4
