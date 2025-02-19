@@ -72,15 +72,15 @@ vodCheck(){
 		#tu tworzymy tablicę z wszystkimi wynikami pasującymi do: nazwa serialu + typ video + szukany vod
 		testLine=($( cat "${file}" | grep "${m}" | grep "${mediaType}" | grep -E "voe|vidoza|vidmoly" )) #| head -n 1 ))
 		#tutaj iterujemy po całej tablicy i wykonujemy wstępne sprawdzenie czy video wogóle istnieje na tym vod czy nie zostało usunięte
-		if [ ! -z $testLine ]; then
+		if [ "${testLine}" ]; then
 			for line in "${testLine[@]}"; do
 			#echo $line
 				testVod=$( printf "%s" "${line}" | sed -n 's/^.*\/\/\([^.]*\)\..*$/\1/p' )
 				#echo $testVod
 				testLink=$( printf "%s" "${line}" | cut -d "@" -f1 )
-				echo $testLink
-				echo "testujemy ${testVod}Test ${testLink}"
-#				"${testVod}"Test "${testLink}"
+#				echo $testLink
+#				echo "testujemy ${testVod}Test ${testLink}"
+				"${testVod}"Test "${testLink}"
 #				echo ${isOK}
 				#Jeśli nie mamy błędu to dopisujemy do ostatecznej tablicy lines()
 				if [ "${isOK}" = true ]; then
@@ -119,7 +119,7 @@ vidozaTest(){
 vidoza(){
 	curlOpts=''
 	videoURL=$( curl -sL "${link}" | grep sourcesCode | cut -d '"' -f2 )
-	if [ ! -z "${seriesTitle}" ] && [ ! -z "${seasonNumber}" ] && [ ! -z "${episodeTitle}" ]; then
+	if [ "${seriesTitle}" ] && [ "${seasonNumber}" ] && [ "${episodeTitle}" ]; then
 		curl "${videoURL}" -o "${outDir}"/"${seriesTitle}"/"${seasonNumber}"/"${fullEpisodeTitle}".mp4
 		printf "\n\nFilm zapisany w %s/%s/%s/%s.mp4 \n\n" "${outDir}" "${seriesTitle}" "${seasonNumber}" "${fullEpisodeTitle}"
 	else
@@ -159,7 +159,7 @@ lulu(){
 
 #Obsługa pobrania POJEDYNCZEGO filmu
 getVideo(){
-	if [ ! -z  "$( cat "${partsList}" )" ] ; then
+	if [ "$( cat "${partsList}" )" ] ; then
 		ilosc=$( cat "${partsList}" | wc -l )
 		count=1;
 			while read line ; do
@@ -187,7 +187,7 @@ getVideo(){
 #	- [s02e02].tytul.mp4/ts
 #	- ...
 getSeries(){
-	if [ ! -z  "$( cat "${partsList}" )" ] ; then
+	if [ "$( cat "${partsList}" )" ] ; then
 		ilosc=$( cat "${partsList}" | wc -l )
 		count=1;
 
@@ -228,7 +228,7 @@ for file in "${path}"*; do
 
 			isThere=$( ls "${outDir}/${title}/${title}".* 2>/dev/null )
 
-			if [ ! -z "${isThere}" ]; then
+			if [ "${isThere}" ]; then
 				printf "Plik ${isThere##*/} już istnieje: %s \n" "${isThere}"
 			else
 				make_dir "${title}"
@@ -256,10 +256,10 @@ for file in "${path}"*; do
 			
 			isThere=$( ls "${outDir}/${seriesTitle}/${seasonNumber}/${fullEpisodeTitle}".* 2>/dev/null )
 
-			if [ ! -z "${isThere}" ]; then
+			if [ "${isThere}" ]; then
 				printf "Plik ${isThere##*/} już istnieje: %s \n" "${isThere}"
 			else
-				echo "${myVod}"
+				#echo "${myVod}"
 				make_dir "${episodeTitle}"
 				cp "${file}" "${tmpDir}"
 				mkdir -p "${outDir}/${seriesTitle}/${seasonNumber}"
@@ -278,5 +278,5 @@ for file in "${path}"*; do
 
 done
 
-#No i robimy porządki na koniec
+
 rm -rf "${fTmp}" >/dev/null 2>&1
