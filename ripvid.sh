@@ -74,14 +74,9 @@ vodCheck(){
 		#tutaj iterujemy po całej tablicy i wykonujemy wstępne sprawdzenie czy video wogóle istnieje na tym vod czy nie zostało usunięte
 		if [ "${testLine}" ]; then
 			for line in "${testLine[@]}"; do
-			#echo $line
 				testVod=$( printf "%s" "${line}" | sed -n 's/^.*\/\/\([^.]*\)\..*$/\1/p' )
-				#echo $testVod
 				testLink=$( printf "%s" "${line}" | cut -d "@" -f1 )
-#				echo $testLink
-#				echo "testujemy ${testVod}Test ${testLink}"
 				"${testVod}"Test "${testLink}"
-#				echo ${isOK}
 				#Jeśli nie mamy błędu to dopisujemy do ostatecznej tablicy lines()
 				if [ "${isOK}" = true ]; then
 					line="${testVod}@${line}"
@@ -93,7 +88,6 @@ vodCheck(){
 			printf "Dostępne możliwości do wyboru to: \n"
 			versions=($( awk -F'@' '{ print $2 }' "${1}" | sort -u ))
 			printf "[%s] \n" "${versions[@]}"
-#			break
 		fi
 	done
 }
@@ -160,16 +154,16 @@ lulu(){
 #Obsługa pobrania POJEDYNCZEGO filmu
 getVideo(){
 	if [ "$( cat "${partsList}" )" ] ; then
-		ilosc=$( cat "${partsList}" | wc -l )
+		ilosc=$( wc -l < "${partsList}" )
 		count=1;
-			while read line ; do
+			while read -r line ; do
 				nazwa=$(printf "%03d" "${count}");
 				printf "Pobieram część %s z %s\n" "${count}" "${ilosc}"
 				curl -sL "${mainURL}"/"${line}" "${curlOpts[@]}" -o "${tmpDir}"/"${nazwa}".ts
 				count=$((count+1))
 			done<"${partsList}"
 
-		cat $(ls "${tmpDir}"/*.ts) > "${outDir}"/"${title}"/"${title}".ts 
+		cat "$(ls "${tmpDir}"/*.ts)" > "${outDir}"/"${title}"/"${title}".ts 
 		printf "\n\nFilm zapisany w %s/%s/%s.ts \n\n" "${outDir}" "${title}" "${title}"
 	else
 		printf "Plik %s wygląda na pusty!\n" "${partsList}"
@@ -188,17 +182,16 @@ getVideo(){
 #	- ...
 getSeries(){
 	if [ "$( cat "${partsList}" )" ] ; then
-		ilosc=$( cat "${partsList}" | wc -l )
+		ilosc=$( wc -l < "${partsList}" )
 		count=1;
-
-			while read line ; do
+			while read -r line ; do
 					nazwa=$(printf "%03d" "${count}");
 					printf "Pobieram część %s z %s\n" "${count}" "${ilosc}"
 					curl -sL "${mainURL}"/"${line}" "${curlOpts[@]}" -o "${tmpDir}"/"${nazwa}".ts
 					count=$((count+1))
 			done<"${partsList}"
 
-		cat $(ls "${tmpDir}"/*.ts) > "${outDir}"/"${seriesTitle}"/"${seasonNumber}"/"${fullEpisodeTitle}".ts 
+		cat "$(ls "${tmpDir}"/*.ts)" > "${outDir}"/"${seriesTitle}"/"${seasonNumber}"/"${fullEpisodeTitle}".ts 
 		printf "\n\nFilm zapisany w %s/%s/%s/%s.ts \n\n" "${outDir}" "${seriesTitle}" "${seasonNumber}" "${fullEpisodeTitle}"
 	else
 		printf "Plik %s wygląda na pusty!\n" "${partsList}"
@@ -259,7 +252,6 @@ for file in "${path}"*; do
 			if [ "${isThere}" ]; then
 				printf "Plik ${isThere##*/} już istnieje: %s \n" "${isThere}"
 			else
-				#echo "${myVod}"
 				make_dir "${episodeTitle}"
 				cp "${file}" "${tmpDir}"
 				mkdir -p "${outDir}/${seriesTitle}/${seasonNumber}"
