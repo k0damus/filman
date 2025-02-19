@@ -43,7 +43,7 @@ Jeśli wszystko pójdzie dobrze to po kilku(-nastu) minutach mamy pobrany film d
 # Inne
 Do katalogu gdzie wrzucamy pliki z danymi ze strony (w przykładzie powyżej **/tmp/jakiskatalog/**) możemy umieścić dowolną ilość plików do filmów i/lub seriali. Mogą być wymieszane pliki z serialami oraz filmami. Nieistotne są też ich nazwy/rozszerzenia. <del>Ważne jest tylko to by w jednym pliku znajdowały się dane do jednego odcinka serialu / jednego filmu.
 
-UPDATE: dodana możliwość wrzucenia wszystkiego do jednego pliku. Mogą być wymieszane dane serialowe oraz filmowe w jednym lub wielu plikach.
+UPDATE: dodana możliwość wrzucenia wszystkiego do jednego pliku. Mogą być wymieszane dane serialowe oraz filmowe w jednym lub wielu plikach. Najwygodniejsze rozwiązanie to po prostu wrzucić wszystko do jednego pliku :)
 
 Obsługiwane jest pobieranie z najpopularniejszych seriwsów (voe.sx, vidoza.net, vidmoly.to) jednakże nie zawsze intersujący nas typ video może być wszędzie dostępny.
 
