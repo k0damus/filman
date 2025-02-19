@@ -156,14 +156,14 @@ getVideo(){
 	if [ "$( cat "${partsList}" )" ] ; then
 		ilosc=$( wc -l < "${partsList}" )
 		count=1;
-			while read -r line ; do
+			while read line ; do
 				nazwa=$(printf "%03d" "${count}");
 				printf "Pobieram część %s z %s\n" "${count}" "${ilosc}"
 				curl -sL "${mainURL}"/"${line}" "${curlOpts[@]}" -o "${tmpDir}"/"${nazwa}".ts
 				count=$((count+1))
 			done<"${partsList}"
 
-		cat "$(ls "${tmpDir}"/*.ts)" > "${outDir}"/"${title}"/"${title}".ts 
+		cat $(ls "${tmpDir}"/*.ts) > "${outDir}"/"${title}"/"${title}".ts 
 		printf "\n\nFilm zapisany w %s/%s/%s.ts \n\n" "${outDir}" "${title}" "${title}"
 	else
 		printf "Plik %s wygląda na pusty!\n" "${partsList}"
@@ -184,14 +184,14 @@ getSeries(){
 	if [ "$( cat "${partsList}" )" ] ; then
 		ilosc=$( wc -l < "${partsList}" )
 		count=1;
-			while read -r line ; do
+			while read line ; do
 					nazwa=$(printf "%03d" "${count}");
 					printf "Pobieram część %s z %s\n" "${count}" "${ilosc}"
 					curl -sL "${mainURL}"/"${line}" "${curlOpts[@]}" -o "${tmpDir}"/"${nazwa}".ts
 					count=$((count+1))
 			done<"${partsList}"
 
-		cat "$(ls "${tmpDir}"/*.ts)" > "${outDir}"/"${seriesTitle}"/"${seasonNumber}"/"${fullEpisodeTitle}".ts 
+		cat $(ls "${tmpDir}"/*.ts) > "${outDir}"/"${seriesTitle}"/"${seasonNumber}"/"${fullEpisodeTitle}".ts 
 		printf "\n\nFilm zapisany w %s/%s/%s/%s.ts \n\n" "${outDir}" "${seriesTitle}" "${seasonNumber}" "${fullEpisodeTitle}"
 	else
 		printf "Plik %s wygląda na pusty!\n" "${partsList}"
