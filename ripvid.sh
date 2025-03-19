@@ -66,11 +66,11 @@ make_dir(){
 
 #Sprawdzamy z którego serwisu możemy pobrać dany film, tzn. czy w ogóle są dostępne linki.
 vodCheck(){
-	movies=($( cat "${file}" | cut -d '@' -f 3- | sort -u  ))
+	movies=($(cut -d '@' -f 3-  < "${file}"| sort -u  ))
 	lines=()
 	for m in "${movies[@]}"; do
 		#tu tworzymy tablicę z wszystkimi wynikami pasującymi do: nazwa serialu + typ video + szukany vod
-		testLine=($( cat "${file}" | grep "${m}" | grep "${mediaType}" | grep -E "voe|vidoza|vidmoly" )) #| head -n 1 ))
+		testLine=($( grep "${m}" "${file}" | grep "${mediaType}" | grep -E "voe|vidoza|vidmoly" )) #| head -n 1 ))
 		#tutaj iterujemy po całej tablicy i wykonujemy wstępne sprawdzenie czy video wogóle istnieje na tym vod czy nie zostało usunięte
 		if [ "${testLine}" ]; then
 			for line in "${testLine[@]}"; do

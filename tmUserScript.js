@@ -75,7 +75,7 @@ console.log(allData);
 let output = '';
 
 if (allData.length > 0) {
-   output = `${allData.join('\n')}`;
+    output = `${allData.join('\n')}\n`;
 }
 
 let targetDiv = document.querySelector('div.filman');
