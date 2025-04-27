@@ -70,7 +70,7 @@ vodCheck(){
 	lines=()
 	for m in "${movies[@]}"; do
 		#tu tworzymy tablicę z wszystkimi wynikami pasującymi do: nazwa serialu + typ video + szukany vod
-		testLine=($( grep "${m}" "${file}" | grep "${mediaType}" | grep -E "voe|vidoza|vidmoly" )) #| head -n 1 ))
+		testLine=($( grep "${m}" "${file}" | grep "${mediaType}" | grep -E "streamtape|savefiles|vidoza|vidmoly|luluvdo" )) #| head -n 1 ))
 		#tutaj iterujemy po całej tablicy i wykonujemy wstępne sprawdzenie czy video wogóle istnieje na tym vod czy nie zostało usunięte
 		if [ "${testLine}" ]; then
 			for line in "${testLine[@]}"; do
@@ -93,6 +93,7 @@ vodCheck(){
 }
 
 #Obsługa pobierania z różnych VOD (napierw TEST później funkcja wybierająca właściwe pliki)
+:<<'voeOFF'
 voeTest(){
 	[[ -z $( curl -sL "${1}" | grep '404 - Not found' ) ]] && isOK=true || isOK=false
 }
@@ -104,6 +105,25 @@ voe(){
 	mainURL=$( printf "%s" "${fullURL}" | sed -n 's/\(^.*\)\/master.*$/\1/p')
 	partsPATH=$( curl -sL "${fullURL}" | grep ^index ) 
 	curl -sL "${mainURL}"/"${partsPATH}" | grep -v ^# > "${partsList}"
+}
+voeOFF
+
+streamtapeTest(){
+	[[ -z $(curl -sL "${1}" | grep 'Video not found') ]] && isOK=true || isOK=false
+}
+
+streamtape(){
+	curlOpts=''
+	videoURL=$( curl -s "${link}" | grep "'botlink'" | sed -n "s/.*\(\&expires.*\)'.*/\1/p" | sed "s/^/https:\/\/streamtape.com\/get_video?id=${link##*/}/;s/$/\&stream=1/" )
+	echo $videoURL
+	if [ "${seriesTitle}" ] && [ "${seasonNumber}" ] && [ "${episodeTitle}" ]; then
+		curl -L "${videoURL}" -o "${outDir}"/"${seriesTitle}"/"${seasonNumber}"/"${fullEpisodeTitle}".mp4
+		printf "\n\nFilm zapisany w %s/%s/%s/%s.mp4 \n\n" "${outDir}" "${seriesTitle}" "${seasonNumber}" "${fullEpisodeTitle}"
+	else
+		[ ! -d "${outDir}"/"${title}" ] && mkdir -p "${outDir}"/"${title}"
+		curl -L "${videoURL}" -o "${outDir}"/"${title}"/"${title}".mp4
+		printf "\n\nFilm zapisany w %s/%s/%s.mp4 \n\n" "${outDir}" "${title}" "${title}"
+	fi	
 }
 
 vidozaTest(){
@@ -128,7 +148,9 @@ vidmolyTest(){
 }
 
 vidmoly(){
-	echo $link
+	if [[ "${link}" != *"embed"* ]]; then 
+		link=$( echo "${link}" | sed -n 's/\(https.*\)\(.me\/w\/\)\(.*\)$/\1.to\/embed-\3.html/p')
+	fi
 	curlOpts=( "-H" "User-Agent: Mozilla/5.0" "-H" "Referer: https://vidmoly.to/" )
 	fullURL=$( wget "${link}" -qO- | grep sources: | cut -d '"' -f2 )
 	mainURL=$( printf "%s" "${fullURL}" |  tr -d ',' | sed -n 's/\(^.*\)\.urlset.*/\1/p' )
@@ -136,27 +158,51 @@ vidmoly(){
 	curl -sL "${partsPATH}" "${curlOpts[@]}" | sed -n 's/^.*\(seg.*$\)/\1/p' > "${partsList}"
 }
 
-####################################################################################
-#WIP
-lulu(){
-	curlOpts=( "-H" "User-Agent: Mozilla/5.0" )
-	#echo $link
-	fullURL=$( curl -sL "${link}" "${curlOpts[@]}" | grep sources | cut -d '"' -f2)
-	#echo "fullURL: " $fullURL
-	mainURL=$( printf "%s" "${fullURL}" | sed -n 's/\(^.*\)\/master.*$/\1/p' )
-	#echo "mainURL: " $mainURL
-	partsPATH=$( curl -sL "${fullURL}" | grep index )
-	#echo "partsPATH: " $partsPATH
-	curl -sL "${partsPATH}" | sed -n 's/^.*\(seg.*$\)/\1/p' > "${partsList}"
+luluvdoTest(){
+	[[ -z $(curl -sL "${1}" -H "User-Agent: Mozilla/5.0" | grep 'been deleted') ]] && isOK=true || isOK=false
 }
-####################################################################################
+luluvdo(){
+	curlOpts=( "-H" "User-Agent: Mozilla/5.0" )
+	fullURL=$( curl -sL "${link}" "${curlOpts[@]}" | grep sources | cut -d '"' -f2)
+	mainURL=$( printf "%s" "${fullURL}" | sed -n 's/\(^.*\)\/master.*$/\1/p' )
+	partsPATH=$( curl -sL "${fullURL}" "${curlOpts[@]}" | grep index )
+	curl -sL "${partsPATH}" "${curlOpts[@]}" | sed -n 's/^.*\(seg.*$\)/\1/p' > "${partsList}"
+}
 
+savefilesTest(){
+	input_test=$( curl -sL "https://savefiles.com/dl?op=embed&file_code=${link##*/}&auto=1" -H "Referer: ${link}"  )
+	[[ -z $(curl -sL "${input_test}" -H "User-Agent: Mozilla/5.0" | grep 'been deleted') ]] && isOK=true || isOK=false
+}
+savefiles(){
+	input_data=$( curl -sL "https://savefiles.com/dl?op=embed&file_code=${link##*/}&auto=1" -H "Referer: ${link}" | grep hls )
+	e_and_srv=($( echo "${input_data}" | sed -n 's/^.*file|100|\(.*\)|.*|\([a-z0-9]*\)|setCurrent.*$/\1 \2/p'  ))
+	main_url=($( echo "${input_data}" | sed -n 's/^.*srv|\(.*|\)sources.*$/\1/p' | tr '|' '\n' | tac  | tr '\n' ' ' ))
+	token_tmp=($( echo "${main_url[@]}" | sed -n 's/^.*m3u8 \(.*\) 43200$/\1/p' ))
+
+	if [[ "${#token_tmp[@]}" -gt 1 ]]; then
+		IFS=-;
+		token=$( echo "${token_tmp[*]}" )
+		unset IFS
+	else
+		token="${token_tmp[@]}"
+	fi
+
+	s=$( echo "${input_data}" | sed -n 's/^.*|view|\(.*\)|video_ad|.*$/\1/p' )
+	v=$( echo "${input_data}" | sed -n 's/^.*|ls|\(.*\)|vvplay|.*$/\1/p' )
+	
+	all=( "${main_url[0]}" "${main_url[1]}" "${e_and_srv[0]}" "${main_url[2]}" "${token}" "${s}" "${main_url[-1]}" "${v}" "${e_and_srv[1]}" )
+	
+	partsPATH="https://${all[0]}.savefiles.com/${all[1]}/01/${all[2]}/,${all[3]},.urlset/master.m3u8?t=${all[4]}&s=${all[5]}&e=${all[6]}&v=${all[7]}&srv=${all[8]}&i=0.0&sp=0"
+	partsLINK=$( curl -sL "${partsPATH}" | grep index )
+	mainURL="${partsLINK%/*}"
+	curl -sL "${partsLINK}" | grep ^https | cut -d '/' -f 8- > "${partsList}"
+}
 #Obsługa pobrania POJEDYNCZEGO filmu
 getVideo(){
 	if [ "$( cat "${partsList}" )" ] ; then
 		ilosc=$( wc -l < "${partsList}" )
 		count=1;
-			while read line ; do
+			while read -r line ; do
 				nazwa=$(printf "%03d" "${count}");
 				printf "Pobieram część %s z %s\n" "${count}" "${ilosc}"
 				curl -sL "${mainURL}"/"${line}" "${curlOpts[@]}" -o "${tmpDir}"/"${nazwa}".ts
