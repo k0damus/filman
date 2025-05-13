@@ -75,6 +75,8 @@ vodCheck(){
 		if [ "${testLine}" ]; then
 			for line in "${testLine[@]}"; do
 				testVod=$( printf "%s" "${line}" | sed -n 's/^.*\/\/\([^.]*\)\..*$/\1/p' )
+				#lulu może byćlulu ablo luluvdo, więc zmieniamy
+				[ "${testVod}" == "lulu" ] && testVod='luluvdo'
 				testLink=$( printf "%s" "${line}" | cut -d "@" -f1 )
 				"${testVod}"Test "${testLink}"
 				#Jeśli nie mamy błędu to dopisujemy do ostatecznej tablicy lines()
@@ -109,7 +111,7 @@ voe(){
 voeOFF
 
 streamtapeTest(){
-	[[ -z $(curl -sL "${1}" | grep 'Video not found') ]] && isOK=true || isOK=false
+	[ -z $(curl -sL "${1}" | grep 'Video not found') ] && isOK=true || isOK=false
 }
 
 streamtape(){
@@ -126,7 +128,7 @@ streamtape(){
 }
 
 vidozaTest(){
-	[[ -z $(curl -sL "${1}" | grep 'File was deleted') ]] && isOK=true || isOK=false
+	[ -z $(curl -sL "${1}" | grep 'File was deleted') ] && isOK=true || isOK=false
 }
 
 vidoza(){
@@ -143,7 +145,7 @@ vidoza(){
 }
 
 vidmolyTest(){
-	[[ -z $(curl -sL "${1}" -H "User-Agent: Mozilla/5.0" -H "Referer: https://vidmoly.to/" | grep 'notice.php') ]] && isOK=true || isOK=false
+	[ -z $(curl -sL "${1}" -H "User-Agent: Mozilla/5.0" -H "Referer: https://vidmoly.to/" | grep 'notice.php') ] && isOK=true || isOK=false
 }
 
 vidmoly(){
@@ -157,11 +159,12 @@ vidmoly(){
 	curl -sL "${partsPATH}" "${curlOpts[@]}" | sed -n 's/^.*\(seg.*$\)/\1/p' > "${partsList}"
 }
 
-luluTest(){
-	[[ -z $(curl -sL "${1}" -H "User-Agent: Mozilla/5.0" | grep 'been deleted') ]] && isOK=true || isOK=false
+luluvdoTest(){
+	[ -z $(curl -sL "${1}" -H "User-Agent: Mozilla/5.0" | grep 'been deleted') ] && isOK=true || isOK=false
 }
-lulu(){
-	if [[ "${1}" == *"luluvdo"* ]]; then
+
+luluvdo(){
+	if [ "${1}" == *"luluvdo"* ]; then
 		link=$( printf "%s" "${1}" | sed 's/luluvdo.com\/d/lulu.st\/e/' )
 	fi
 	curlOpts=( "-H" "User-Agent: Mozilla/5.0" )
@@ -170,25 +173,24 @@ lulu(){
 	partsPATH=$( curl -sL "${fullURL}" "${curlOpts[@]}" | grep index )
 	curl -sL "${partsPATH}" "${curlOpts[@]}" | sed -n 's/^.*\(seg.*$\)/\1/p' > "${partsList}"
 	key=$( curl -sL "${partsPATH}" "${curlOpts[@]}" | grep enc | cut -d '"' -f2 )
-	curl -sL $(curl -sL "${partsPATH}" "${curlOpts[@]}" | grep enc | cut -d '"' -f2) "${curlOpts[@]}"  > "${tmpDir}"/decryption.key
+	curl -sL $(curl -sL "${partsPATH}" "${curlOpts[@]}" | grep enc | cut -d '"' -f2) "${curlOpts[@]}" > "${tmpDir}"/encryption.key
 }
 
-luluDecrypt(){
+luluvdoDecrypt(){
 	for f in "${tmpDir}"/*.ts; do
 		NUM=$(echo "${f}" | grep -oP '\d+(?=\.ts)'  | tr -d '0' )
 		NAME=${f##*/}
 		IV=$(printf "%032x" "$NUM")
-		printf "Odszyfrowywanie %s do %s.\n" "${f}" "${tmpDir}"/dec-"${NAME}"
-		openssl aes-128-cbc -d -in "${f}" -out "${tmpDir}"/dec-"${NAME}" -nosalt -iv "${IV}" -K "$(xxd -p "${tmpDir}"/decryption.key | tr -d '\n')"
+		printf "Odszyfrowywanie %s.\n" "${f}"
+		openssl aes-128-cbc -d -in "${f}" -out "${tmpDir}"/dec-"${NAME}" -nosalt -iv "${IV}" -K "$(xxd -p "${tmpDir}"/encryption.key | tr -d '\n')"
+		#Po zdekodowaniu adpisujemy oryginał
+		mv "${tmpDir}"/dec-"${NAME}" "${f}"
 	done
-
-	cat $(ls "${tmpDir}"/dec-*.ts) > "${outDir}"/"${seriesTitle}"/"${seasonNumber}"/"${fullEpisodeTitle}".ts 
-	printf "\n\nFilm zapisany w %s/%s/%s/%s.ts \n\n" "${outDir}" "${seriesTitle}" "${seasonNumber}" "${fullEpisodeTitle}"
 }
 
 savefilesTest(){
 	input_test=$( curl -sL "https://savefiles.com/dl?op=embed&file_code=${link##*/}&auto=1" -H "Referer: ${link}"  )
-	[[ -z $(curl -sL "${input_test}" -H "User-Agent: Mozilla/5.0" | grep 'been deleted') ]] && isOK=true || isOK=false
+	[ -z $(curl -sL "${input_test}" -H "User-Agent: Mozilla/5.0" | grep 'been deleted') ] && isOK=true || isOK=false
 }
 savefiles(){
 	input_data=$( curl -sL "https://savefiles.com/dl?op=embed&file_code=${link##*/}&auto=1" -H "Referer: ${link}" | grep hls )
@@ -196,7 +198,7 @@ savefiles(){
 	main_url=($( echo "${input_data}" | sed -n 's/^.*srv|\(.*|\)sources.*$/\1/p' | tr '|' '\n' | tac  | tr '\n' ' ' ))
 	token_tmp=($( echo "${main_url[@]}" | sed -n 's/^.*m3u8 \(.*\) 43200$/\1/p' ))
 
-	if [[ "${#token_tmp[@]}" -gt 1 ]]; then
+	if [ "${#token_tmp[@]}" -gt 1 ]; then
 		IFS=-;
 		token=$( echo "${token_tmp[*]}" )
 		unset IFS
@@ -226,6 +228,10 @@ getVideo(){
 				count=$((count+1))
 			done<"${partsList}"
 
+		if [ -f "${tmpDir}"/encryption.key ]; then
+			luluvdoDecrypt
+		fi
+
 		cat $(ls "${tmpDir}"/*.ts) > "${outDir}"/"${title}"/"${title}".ts 
 		printf "\n\nFilm zapisany w %s/%s/%s.ts \n\n" "${outDir}" "${title}" "${title}"
 	else
@@ -234,15 +240,6 @@ getVideo(){
 }
 
 #Obsługa pobierania seriali - ładuje filmy do ładnej struktury katalogów, wedle schematu:
-#${outDir}/Tytul:
-#- s01
-#  	- [s01e01].tytul.mp4/ts
-#	- [s01e02].tytul.mp4/ts
-#	- ...
-# - s02
-#	- [s02e01].tytul.mp4/ts
-#	- [s02e02].tytul.mp4/ts
-#	- ...
 getSeries(){
 	if [ "$( cat "${partsList}" )" ] ; then
 		ilosc=$( wc -l < "${partsList}" )
@@ -253,9 +250,13 @@ getSeries(){
 					curl -sL "${mainURL}"/"${line}" "${curlOpts[@]}" -o "${tmpDir}"/"${nazwa}".ts
 					count=$((count+1))
 			done<"${partsList}"
-#	exit 0
-#		cat $(ls "${tmpDir}"/*.ts) > "${outDir}"/"${seriesTitle}"/"${seasonNumber}"/"${fullEpisodeTitle}".ts 
-#		printf "\n\nFilm zapisany w %s/%s/%s/%s.ts \n\n" "${outDir}" "${seriesTitle}" "${seasonNumber}" "${fullEpisodeTitle}"
+		
+		if [ -f "${tmpDir}"/encryption.key ]; then
+			luluvdoDecrypt
+		fi
+		
+		cat $(ls "${tmpDir}"/*.ts) > "${outDir}"/"${seriesTitle}"/"${seasonNumber}"/"${fullEpisodeTitle}".ts 
+		printf "\n\nFilm zapisany w %s/%s/%s/%s.ts \n\n" "${outDir}" "${seriesTitle}" "${seasonNumber}" "${fullEpisodeTitle}"
 	else
 		printf "Plik %s wygląda na pusty!\n" "${partsList}"
 	fi
@@ -320,10 +321,6 @@ for file in "${path}"*; do
 				printf "Pobieram %s - %s z %s...\n\n" "${seriesTitle}" "${episodeTitle}" "${myVod}"
 				if [ "${myVod}" == 'vidoza' ] ; then
 					"${myVod}"
-				elif [ "${myVod}" == 'lulu' ] ; then
-					"${myVod}"
-					getSeries
-					luluDecrypt
 				else
 					"${myVod}"
 					getSeries
