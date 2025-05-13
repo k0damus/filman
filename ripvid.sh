@@ -66,11 +66,11 @@ make_dir(){
 
 #Sprawdzamy z którego serwisu możemy pobrać dany film, tzn. czy w ogóle są dostępne linki.
 vodCheck(){
-	movies=($(cut -d '@' -f 3-  < "${file}"| sort -u  ))
+	movies=($(cut -d '@' -f 3-  < "${file}" | sort -u  ))
 	lines=()
 	for m in "${movies[@]}"; do
 		#tu tworzymy tablicę z wszystkimi wynikami pasującymi do: nazwa serialu + typ video + szukany vod
-		testLine=($( grep "${m}" "${file}" | grep "${mediaType}" | grep -E "streamtape|savefiles|vidoza|vidmoly|luluvdo" )) #| head -n 1 ))
+		testLine=($( grep "${m}" "${file}" | grep "${mediaType}" | grep -E "streamtape|savefiles|vidoza|vidmoly|lulu" )) #| head -n 1 ))
 		#tutaj iterujemy po całej tablicy i wykonujemy wstępne sprawdzenie czy video wogóle istnieje na tym vod czy nie zostało usunięte
 		if [ "${testLine}" ]; then
 			for line in "${testLine[@]}"; do
@@ -115,7 +115,6 @@ streamtapeTest(){
 streamtape(){
 	curlOpts=''
 	videoURL=$( curl -s "${link}" | grep "'botlink'" | sed -n "s/.*\(\&expires.*\)'.*/\1/p" | sed "s/^/https:\/\/streamtape.com\/get_video?id=${link##*/}/;s/$/\&stream=1/" )
-	echo $videoURL
 	if [ "${seriesTitle}" ] && [ "${seasonNumber}" ] && [ "${episodeTitle}" ]; then
 		curl -L "${videoURL}" -o "${outDir}"/"${seriesTitle}"/"${seasonNumber}"/"${fullEpisodeTitle}".mp4
 		printf "\n\nFilm zapisany w %s/%s/%s/%s.mp4 \n\n" "${outDir}" "${seriesTitle}" "${seasonNumber}" "${fullEpisodeTitle}"
@@ -149,7 +148,7 @@ vidmolyTest(){
 
 vidmoly(){
 	if [[ "${link}" != *"embed"* ]]; then 
-		link=$( echo "${link}" | sed -n 's/\(https.*\)\(.me\/w\/\)\(.*\)$/\1.to\/embed-\3.html/p')
+		link=$( printf "%s" "${link}" | sed -n 's/\(https.*\)\(.me\/w\/\)\(.*\)$/\1.to\/embed-\3.html/p')
 	fi
 	curlOpts=( "-H" "User-Agent: Mozilla/5.0" "-H" "Referer: https://vidmoly.to/" )
 	fullURL=$( wget "${link}" -qO- | grep sources: | cut -d '"' -f2 )
@@ -158,15 +157,33 @@ vidmoly(){
 	curl -sL "${partsPATH}" "${curlOpts[@]}" | sed -n 's/^.*\(seg.*$\)/\1/p' > "${partsList}"
 }
 
-luluvdoTest(){
+luluTest(){
 	[[ -z $(curl -sL "${1}" -H "User-Agent: Mozilla/5.0" | grep 'been deleted') ]] && isOK=true || isOK=false
 }
-luluvdo(){
+lulu(){
+	if [[ "${1}" == *"luluvdo"* ]]; then
+		link=$( printf "%s" "${1}" | sed 's/luluvdo.com\/d/lulu.st\/e/' )
+	fi
 	curlOpts=( "-H" "User-Agent: Mozilla/5.0" )
 	fullURL=$( curl -sL "${link}" "${curlOpts[@]}" | grep sources | cut -d '"' -f2)
 	mainURL=$( printf "%s" "${fullURL}" | sed -n 's/\(^.*\)\/master.*$/\1/p' )
 	partsPATH=$( curl -sL "${fullURL}" "${curlOpts[@]}" | grep index )
 	curl -sL "${partsPATH}" "${curlOpts[@]}" | sed -n 's/^.*\(seg.*$\)/\1/p' > "${partsList}"
+	key=$( curl -sL "${partsPATH}" "${curlOpts[@]}" | grep enc | cut -d '"' -f2 )
+	curl -sL $(curl -sL "${partsPATH}" "${curlOpts[@]}" | grep enc | cut -d '"' -f2) "${curlOpts[@]}"  > "${tmpDir}"/decryption.key
+}
+
+luluDecrypt(){
+	for f in "${tmpDir}"/*.ts; do
+		NUM=$(echo "${f}" | grep -oP '\d+(?=\.ts)'  | tr -d '0' )
+		NAME=${f##*/}
+		IV=$(printf "%032x" "$NUM")
+		printf "Odszyfrowywanie %s do %s.\n" "${f}" "${tmpDir}"/dec-"${NAME}"
+		openssl aes-128-cbc -d -in "${f}" -out "${tmpDir}"/dec-"${NAME}" -nosalt -iv "${IV}" -K "$(xxd -p "${tmpDir}"/decryption.key | tr -d '\n')"
+	done
+
+	cat $(ls "${tmpDir}"/dec-*.ts) > "${outDir}"/"${seriesTitle}"/"${seasonNumber}"/"${fullEpisodeTitle}".ts 
+	printf "\n\nFilm zapisany w %s/%s/%s/%s.ts \n\n" "${outDir}" "${seriesTitle}" "${seasonNumber}" "${fullEpisodeTitle}"
 }
 
 savefilesTest(){
@@ -236,9 +253,9 @@ getSeries(){
 					curl -sL "${mainURL}"/"${line}" "${curlOpts[@]}" -o "${tmpDir}"/"${nazwa}".ts
 					count=$((count+1))
 			done<"${partsList}"
-
-		cat $(ls "${tmpDir}"/*.ts) > "${outDir}"/"${seriesTitle}"/"${seasonNumber}"/"${fullEpisodeTitle}".ts 
-		printf "\n\nFilm zapisany w %s/%s/%s/%s.ts \n\n" "${outDir}" "${seriesTitle}" "${seasonNumber}" "${fullEpisodeTitle}"
+#	exit 0
+#		cat $(ls "${tmpDir}"/*.ts) > "${outDir}"/"${seriesTitle}"/"${seasonNumber}"/"${fullEpisodeTitle}".ts 
+#		printf "\n\nFilm zapisany w %s/%s/%s/%s.ts \n\n" "${outDir}" "${seriesTitle}" "${seasonNumber}" "${fullEpisodeTitle}"
 	else
 		printf "Plik %s wygląda na pusty!\n" "${partsList}"
 	fi
@@ -292,18 +309,21 @@ for file in "${path}"*; do
 				episodeTitle="${BASH_REMATCH[6]}"
 				fullEpisodeTitle="["$seasonNumber$episodeNumber"]_"$episodeTitle
 			fi
-			
+
 			isThere=$( ls "${outDir}/${seriesTitle}/${seasonNumber}/${fullEpisodeTitle}".* 2>/dev/null )
 
 			if [ "${isThere}" ]; then
 				printf "Plik ${isThere##*/} już istnieje: %s \n" "${isThere}"
 			else
 				make_dir "${episodeTitle}"
-				cp "${file}" "${tmpDir}"
 				mkdir -p "${outDir}/${seriesTitle}/${seasonNumber}"
 				printf "Pobieram %s - %s z %s...\n\n" "${seriesTitle}" "${episodeTitle}" "${myVod}"
 				if [ "${myVod}" == 'vidoza' ] ; then
 					"${myVod}"
+				elif [ "${myVod}" == 'lulu' ] ; then
+					"${myVod}"
+					getSeries
+					luluDecrypt
 				else
 					"${myVod}"
 					getSeries
