@@ -1,6 +1,6 @@
-# Filman downloader
+# Filman / zaluknij downloader
 Pobieranie filmów działa 2 etapowo:
- - pobranie linków do filmu/serialu z serwisu filman.cc (tmUserScript_filman.js) lub z serwisu zaluknij.cc (tmUserScript_zaluknij.js)
+ - pobranie linków do filmu/serialu z serwisu [filman.cc](https://filman.cc/) (tmUserScript_filman.js) lub z serwisu [zaluknij.cc](https://zaluknij.cc/) (tmUserScript_zaluknij.js)
  - uruchomienie skryptu bash (ripvid.sh)
    
 # Wymagania
