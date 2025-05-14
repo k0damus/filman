@@ -6,7 +6,7 @@ outDir="${HOME}"/minidlna/torrent/complete
 fTmp='/tmp/filman'
 reqCheck=()
 
-req=('/usr/bin/curl')
+req=('/usr/bin/curl' '/usr/bin/openssl')
 
 for r in "${req[@]}"; do
 	[ ! -f "${r}" ] && reqCheck+=("${r}");
@@ -75,9 +75,10 @@ vodCheck(){
 		if [ "${testLine}" ]; then
 			for line in "${testLine[@]}"; do
 				testVod=$( printf "%s" "${line}" | sed -n 's/^.*\/\/\([^.]*\)\..*$/\1/p' )
-				#lulu może byćlulu ablo luluvdo, więc zmieniamy
+				#lulu może być "lulu" ablo "luluvdo", więc zmieniamy
 				[ "${testVod}" == "lulu" ] && testVod='luluvdo'
 				testLink=$( printf "%s" "${line}" | cut -d "@" -f1 )
+				#testujemy
 				"${testVod}"Test "${testLink}"
 				#Jeśli nie mamy błędu to dopisujemy do ostatecznej tablicy lines()
 				if [ "${isOK}" = true ]; then
