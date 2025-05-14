@@ -116,8 +116,14 @@ streamtapeTest(){
 }
 
 streamtape(){
+	if [[ "${1}" != *"/e/"* ]]; then 
+		link=$( printf "%s" "${1}" | sed 's/com\/v\//com\/e\//')
+	fi
+
+	videoID=$( printf "%s" "${link}" | cut -d '/' -f5 )
+	videoURL=$( curl -sL "${link}" | grep "'botlink'" | sed -n "s/.*\(\&expires.*\)'.*/\1/p" | sed "s/^/https:\/\/streamtape.com\/get_video?id=${videoID}/;s/$/\&stream=1/" )
 	curlOpts=''
-	videoURL=$( curl -s "${link}" | grep "'botlink'" | sed -n "s/.*\(\&expires.*\)'.*/\1/p" | sed "s/^/https:\/\/streamtape.com\/get_video?id=${link##*/}/;s/$/\&stream=1/" )
+
 	if [ "${seriesTitle}" ] && [ "${seasonNumber}" ] && [ "${episodeTitle}" ]; then
 		curl -L "${videoURL}" -o "${outDir}"/"${seriesTitle}"/"${seasonNumber}"/"${fullEpisodeTitle}".mp4
 		printf "\n\nFilm zapisany w %s/%s/%s/%s.mp4 \n\n" "${outDir}" "${seriesTitle}" "${seasonNumber}" "${fullEpisodeTitle}"
@@ -134,7 +140,8 @@ vidozaTest(){
 
 vidoza(){
 	curlOpts=''
-	videoURL=$( curl -sL "${link}" | grep sourcesCode | cut -d '"' -f2 )
+	videoURL=$( curl -sL "${1}" | grep sourcesCode | cut -d '"' -f2 )
+
 	if [ "${seriesTitle}" ] && [ "${seasonNumber}" ] && [ "${episodeTitle}" ]; then
 		curl "${videoURL}" -o "${outDir}"/"${seriesTitle}"/"${seasonNumber}"/"${fullEpisodeTitle}".mp4
 		printf "\n\nFilm zapisany w %s/%s/%s/%s.mp4 \n\n" "${outDir}" "${seriesTitle}" "${seasonNumber}" "${fullEpisodeTitle}"
@@ -150,9 +157,10 @@ vidmolyTest(){
 }
 
 vidmoly(){
-	if [[ "${link}" != *"embed"* ]]; then 
-		link=$( printf "%s" "${link}" | sed -n 's/\(https.*\)\(.me\/w\/\)\(.*\)$/\1.to\/embed-\3.html/p')
+	if [[ "${1}" != *"embed"* ]]; then 
+		link=$( printf "%s" "${1}" | sed -n 's/\(https.*\)\(.me\/w\/\)\(.*\)$/\1.to\/embed-\3.html/p')
 	fi
+	
 	curlOpts=( "-H" "User-Agent: Mozilla/5.0" "-H" "Referer: https://vidmoly.to/" )
 	fullURL=$( wget "${link}" -qO- | grep sources: | cut -d '"' -f2 )
 	mainURL=$( printf "%s" "${fullURL}" |  tr -d ',' | sed -n 's/\(^.*\)\.urlset.*/\1/p' )
@@ -165,10 +173,13 @@ luluvdoTest(){
 }
 
 luluvdo(){
-	if [ "${1}" == *"luluvdo"* ]; then
-		link=$( printf "%s" "${1}" | sed 's/luluvdo.com\/d/lulu.st\/e/' )
-	fi
-	curlOpts=( "-H" "User-Agent: Mozilla/5.0" )
+#	if [ "${link}" == *"luluvdo"* ]; then
+#		link=$( printf "%s" "${link}" | sed 's/luluvdo.com\/d/lulu.st\/e/' )
+#	fi
+	link=$( curl -sL "${1}" | grep 'iframe src' | sed -n 's/.*\(https.*\)" scr.*$/\1/p' | head -n 1 )
+
+	referer=$( printf "%s" "${link}" | sed -n 's/\(^.*com\/\).*$/\1/p' )
+	curlOpts=( "-H" "User-Agent: Mozilla/5.0" "-H" "Referer: ${referer}" )
 	fullURL=$( curl -sL "${link}" "${curlOpts[@]}" | grep sources | cut -d '"' -f2)
 	mainURL=$( printf "%s" "${fullURL}" | sed -n 's/\(^.*\)\/master.*$/\1/p' )
 	partsPATH=$( curl -sL "${fullURL}" "${curlOpts[@]}" | grep index )
@@ -190,11 +201,11 @@ luluvdoDecrypt(){
 }
 
 savefilesTest(){
-	input_test=$( curl -sL "https://savefiles.com/dl?op=embed&file_code=${link##*/}&auto=1" -H "Referer: ${link}"  )
+	input_test=$( curl -sL "https://savefiles.com/dl?op=embed&file_code=${1##*/}&auto=1" -H "Referer: ${1}"  )
 	[ -z $(curl -sL "${input_test}" -H "User-Agent: Mozilla/5.0" | grep 'been deleted') ] && isOK=true || isOK=false
 }
 savefiles(){
-	input_data=$( curl -sL "https://savefiles.com/dl?op=embed&file_code=${link##*/}&auto=1" -H "Referer: ${link}" | grep hls )
+	input_data=$( curl -sL "https://savefiles.com/dl?op=embed&file_code=${1##*/}&auto=1" -H "Referer: ${1}" | grep hls )
 	e_and_srv=($( echo "${input_data}" | sed -n 's/^.*file|100|\(.*\)|.*|\([a-z0-9]*\)|setCurrent.*$/\1 \2/p'  ))
 	main_url=($( echo "${input_data}" | sed -n 's/^.*srv|\(.*|\)sources.*$/\1/p' | tr '|' '\n' | tac  | tr '\n' ' ' ))
 	token_tmp=($( echo "${main_url[@]}" | sed -n 's/^.*m3u8 \(.*\) 43200$/\1/p' ))
@@ -293,9 +304,9 @@ for file in "${path}"*; do
 				mkdir -p "${outDir}/${title}"
 				printf "Pobieram %s z %s...\n\n" "${title}" "${myVod}"
 				if [ "${myVod}" == 'vidoza' ] ; then
-					"${myVod}"
+					"${myVod}" "${link}"
 				else
-					"${myVod}"
+					"${myVod}" "${link}"
 					getVideo
 				fi
 			fi
@@ -321,9 +332,9 @@ for file in "${path}"*; do
 				mkdir -p "${outDir}/${seriesTitle}/${seasonNumber}"
 				printf "Pobieram %s - %s z %s...\n\n" "${seriesTitle}" "${episodeTitle}" "${myVod}"
 				if [ "${myVod}" == 'vidoza' ] ; then
-					"${myVod}"
+					"${myVod}" "${link}"
 				else
-					"${myVod}"
+					"${myVod}" "${link}"
 					getSeries
 				fi
 				rm -rf "${tmpDir}"
