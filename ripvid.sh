@@ -160,7 +160,7 @@ vidmoly(){
 	if [[ "${1}" != *"embed"* ]]; then 
 		link=$( printf "%s" "${1}" | sed -n 's/\(https.*\)\(.me\/w\/\)\(.*\)$/\1.to\/embed-\3.html/p')
 	fi
-	
+
 	curlOpts=( "-H" "User-Agent: Mozilla/5.0" "-H" "Referer: https://vidmoly.to/" )
 	fullURL=$( wget "${link}" -qO- | grep sources: | cut -d '"' -f2 )
 	mainURL=$( printf "%s" "${fullURL}" |  tr -d ',' | sed -n 's/\(^.*\)\.urlset.*/\1/p' )
@@ -303,7 +303,7 @@ for file in "${path}"*; do
 				make_dir "${title}"
 				mkdir -p "${outDir}/${title}"
 				printf "Pobieram %s z %s...\n\n" "${title}" "${myVod}"
-				if [ "${myVod}" == 'vidoza' ] ; then
+				if [ "${myVod}" == 'vidoza' || "${myVod}" == 'streamtape' ] ; then
 					"${myVod}" "${link}"
 				else
 					"${myVod}" "${link}"
@@ -331,7 +331,7 @@ for file in "${path}"*; do
 				make_dir "${episodeTitle}"
 				mkdir -p "${outDir}/${seriesTitle}/${seasonNumber}"
 				printf "Pobieram %s - %s z %s...\n\n" "${seriesTitle}" "${episodeTitle}" "${myVod}"
-				if [ "${myVod}" == 'vidoza' ] ; then
+				if [ "${myVod}" == 'vidoza' || "${myVod}" == 'streamtape' ] ; then
 					"${myVod}" "${link}"
 				else
 					"${myVod}" "${link}"
