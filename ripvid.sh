@@ -135,7 +135,7 @@ streamtape(){
 }
 
 vidozaTest(){
-	[ -z $(curl -sL "${1}" | grep 'File was deleted') ] && isOK=true || isOK=false
+	[[ -z $(curl -sL "${1}" | grep 'File was deleted') ]] && isOK=true || isOK=false
 }
 
 vidoza(){
@@ -153,7 +153,7 @@ vidoza(){
 }
 
 vidmolyTest(){
-	[ -z $(curl -sL "${1}" -H "User-Agent: Mozilla/5.0" -H "Referer: https://vidmoly.to/" | grep 'notice.php') ] && isOK=true || isOK=false
+	[[ -z $(curl -sL "${1}" -H "User-Agent: Mozilla/5.0" -H "Referer: https://vidmoly.to/" | grep 'notice.php') ]] && isOK=true || isOK=false
 }
 
 vidmoly(){
@@ -173,19 +173,22 @@ luluvdoTest(){
 }
 
 luluvdo(){
-#	if [ "${link}" == *"luluvdo"* ]; then
-#		link=$( printf "%s" "${link}" | sed 's/luluvdo.com\/d/lulu.st\/e/' )
-#	fi
-	link=$( curl -sL "${1}" | grep 'iframe src' | sed -n 's/.*\(https.*\)" scr.*$/\1/p' | head -n 1 )
 
-	referer=$( printf "%s" "${link}" | sed -n 's/\(^.*com\/\).*$/\1/p' )
-	curlOpts=( "-H" "User-Agent: Mozilla/5.0" "-H" "Referer: ${referer}" )
-	fullURL=$( curl -sL "${link}" "${curlOpts[@]}" | grep sources | cut -d '"' -f2)
-	mainURL=$( printf "%s" "${fullURL}" | sed -n 's/\(^.*\)\/master.*$/\1/p' )
-	partsPATH=$( curl -sL "${fullURL}" "${curlOpts[@]}" | grep index )
-	curl -sL "${partsPATH}" "${curlOpts[@]}" | sed -n 's/^.*\(seg.*$\)/\1/p' > "${partsList}"
-	key=$( curl -sL "${partsPATH}" "${curlOpts[@]}" | grep enc | cut -d '"' -f2 )
-	curl -sL $(curl -sL "${partsPATH}" "${curlOpts[@]}" | grep enc | cut -d '"' -f2) "${curlOpts[@]}" > "${tmpDir}"/encryption.key
+	if grep -q sources < <( curl -sL "${1}" ); then 
+
+		link=$( curl -sL "${1}" | grep sources | cut -d '"' -f2  )
+
+		mainURL=$( printf "%s" "${link}" | sed -n 's/\(^.*\)\/master.*$/\1/p' )
+		partsPATH=$( curl -sL "${link}" | grep index )
+		curl -sL "${partsPATH}" | sed -n 's/^.*\(seg.*$\)/\1/p' > "${partsList}"
+		curl -sL $(curl -sL "${partsPATH}" | grep enc | cut -d '"' -f2) > "${tmpDir}"/encryption.key
+		
+	else
+
+		printf "Nie mogę znaleźć linku do źródeł.\n"
+
+	fi
+
 }
 
 luluvdoDecrypt(){
@@ -221,7 +224,7 @@ savefiles(){
 	s=$( echo "${input_data}" | sed -n 's/^.*|view|\(.*\)|video_ad|.*$/\1/p' )
 	v=$( echo "${input_data}" | sed -n 's/^.*|ls|\(.*\)|vvplay|.*$/\1/p' )
 	
-	all=( "${main_url[0]}" "${main_url[1]}" "${e_and_srv[0]}" "${main_url[2]}" "${token}" "${s}" "${main_url[-1]}" "${v}" "${e_and_srv[1]}" )
+	all=( "${main_url[0]}" "${main_url[1]}" "${e_and_srv[0]}" "${main_url[2]}" "${token}" "${s}" "${main_url[1]}" "${v}" "${e_and_srv[1]}" )
 	
 	partsPATH="https://${all[0]}.savefiles.com/${all[1]}/01/${all[2]}/,${all[3]},.urlset/master.m3u8?t=${all[4]}&s=${all[5]}&e=${all[6]}&v=${all[7]}&srv=${all[8]}&i=0.0&sp=0"
 	partsLINK=$( curl -sL "${partsPATH}" | grep index )
@@ -303,7 +306,7 @@ for file in "${path}"*; do
 				make_dir "${title}"
 				mkdir -p "${outDir}/${title}"
 				printf "Pobieram %s z %s...\n\n" "${title}" "${myVod}"
-				if [ "${myVod}" == 'vidoza' || "${myVod}" == 'streamtape' ] ; then
+				if [[ "${myVod}" == 'vidoza' || "${myVod}" == 'streamtape' ]] ; then
 					"${myVod}" "${link}"
 				else
 					"${myVod}" "${link}"
@@ -331,7 +334,7 @@ for file in "${path}"*; do
 				make_dir "${episodeTitle}"
 				mkdir -p "${outDir}/${seriesTitle}/${seasonNumber}"
 				printf "Pobieram %s - %s z %s...\n\n" "${seriesTitle}" "${episodeTitle}" "${myVod}"
-				if [ "${myVod}" == 'vidoza' || "${myVod}" == 'streamtape' ] ; then
+				if [[ "${myVod}" == 'vidoza' || "${myVod}" == 'streamtape' ]] ; then
 					"${myVod}" "${link}"
 				else
 					"${myVod}" "${link}"
