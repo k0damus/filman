@@ -112,7 +112,7 @@ voe(){
 voeOFF
 
 streamtapeTest(){
-	[ -z $(curl -sL "${1}" | grep 'Video not found') ] && isOK=true || isOK=false
+	[[ -z $(curl -sL "${1}" | grep 'Video not found') ]] && isOK=true || isOK=false
 }
 
 streamtape(){
@@ -169,7 +169,7 @@ vidmoly(){
 }
 
 luluvdoTest(){
-	[ -z $(curl -sL "${1}" -H "User-Agent: Mozilla/5.0" | grep 'been deleted') ] && isOK=true || isOK=false
+	[[ -z $(curl -sL "${1}" -H "User-Agent: Mozilla/5.0" | grep 'been deleted') ]] && isOK=true || isOK=false
 }
 
 luluvdo(){
@@ -205,28 +205,30 @@ luluvdoDecrypt(){
 
 savefilesTest(){
 	input_test=$( curl -sL "https://savefiles.com/dl?op=embed&file_code=${1##*/}&auto=1" -H "Referer: ${1}"  )
-	[ -z $(curl -sL "${input_test}" -H "User-Agent: Mozilla/5.0" | grep 'been deleted') ] && isOK=true || isOK=false
+	[[ -z $(curl -sL "${input_test}" -H "User-Agent: Mozilla/5.0" | grep 'been deleted') ]] && isOK=true || isOK=false
 }
 savefiles(){
-	input_data=$( curl -sL "https://savefiles.com/dl?op=embed&file_code=${1##*/}&auto=1" -H "Referer: ${1}" | grep hls )
-	e_and_srv=($( echo "${input_data}" | sed -n 's/^.*file|100|\(.*\)|.*|\([a-z0-9]*\)|setCurrent.*$/\1 \2/p'  ))
-	main_url=($( echo "${input_data}" | sed -n 's/^.*srv|\(.*|\)sources.*$/\1/p' | tr '|' '\n' | tac  | tr '\n' ' ' ))
-	token_tmp=($( echo "${main_url[@]}" | sed -n 's/^.*m3u8 \(.*\) 43200$/\1/p' ))
+	partsPATH=$( curl -sL "https://savefiles.com/dl?op=embed&file_code=${1##*/}&auto=1" -H "Referer: ${1}" | grep hls | sed -n 's/^.*\(https.*\)"}].*$/\1/p' )
+	# echo $partsPATH
+	# e_and_srv=($( echo "${input_data}" | sed -n 's/^.*file|100|\(.*\)|.*|\([a-z0-9]*\)|setCurrent.*$/\1 \2/p'  ))
+	# main_url=($( echo "${input_data}" | sed -n 's/^.*srv|\(.*|\)sources.*$/\1/p' | tr '|' '\n' | tac  | tr '\n' ' ' ))
+	# token_tmp=($( echo "${main_url[@]}" | sed -n 's/^.*m3u8 \(.*\) 43200$/\1/p' ))
 
-	if [ "${#token_tmp[@]}" -gt 1 ]; then
-		IFS=-;
-		token=$( echo "${token_tmp[*]}" )
-		unset IFS
-	else
-		token="${token_tmp[@]}"
-	fi
+	# if [ "${#token_tmp[@]}" -gt 1 ]; then
+	# 	IFS=-;
+	# 	token=$( echo "${token_tmp[*]}" )
+	# 	unset IFS
+	# else
+	# 	token="${token_tmp[@]}"
+	# fi
 
-	s=$( echo "${input_data}" | sed -n 's/^.*|view|\(.*\)|video_ad|.*$/\1/p' )
-	v=$( echo "${input_data}" | sed -n 's/^.*|ls|\(.*\)|vvplay|.*$/\1/p' )
+	# s=$( echo "${input_data}" | sed -n 's/^.*|view|\(.*\)|video_ad|.*$/\1/p' )
+	# v=$( echo "${input_data}" | sed -n 's/^.*|ls|\(.*\)|vvplay|.*$/\1/p' )
 	
-	all=( "${main_url[0]}" "${main_url[1]}" "${e_and_srv[0]}" "${main_url[2]}" "${token}" "${s}" "${main_url[1]}" "${v}" "${e_and_srv[1]}" )
+	# all=( "${main_url[0]}" "${main_url[1]}" "${e_and_srv[0]}" "${main_url[2]}" "${token}" "${s}" "${main_url[1]}" "${v}" "${e_and_srv[1]}" )
 	
-	partsPATH="https://${all[0]}.savefiles.com/${all[1]}/01/${all[2]}/,${all[3]},.urlset/master.m3u8?t=${all[4]}&s=${all[5]}&e=${all[6]}&v=${all[7]}&srv=${all[8]}&i=0.0&sp=0"
+	# partsPATH="https://${all[0]}.savefiles.com/${all[1]}/01/${all[2]}/,${all[3]},.urlset/master.m3u8?t=${all[4]}&s=${all[5]}&e=${all[6]}&v=${all[7]}&srv=${all[8]}&i=0.0&sp=0"
+	# curl -sL "${partsPATH}" # | grep index
 	partsLINK=$( curl -sL "${partsPATH}" | grep index )
 	mainURL="${partsLINK%/*}"
 	curl -sL "${partsLINK}" | grep ^https | cut -d '/' -f 8- > "${partsList}"
