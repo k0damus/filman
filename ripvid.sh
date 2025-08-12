@@ -1,6 +1,4 @@
 #!/usr/bin/env bash
-set -u
-set -e
 #Wyedytuj linię poniżej według własnych potrzeb 
 outDir="${HOME}"/minidlna/torrent/complete
 fTmp='/tmp/filman'
@@ -14,12 +12,12 @@ for r in "${req[@]}"; do
 done
 
 if [ "${#reqCheck[@]}" -gt 0 ]; then
-	printf "%s <- Brak tych programów. Zainstaluj.\n" "${reqCheck[@]}";
+	echo "Brak tych programów: ${reqCheck[*]} Zainstaluj."
 	exit 10
 fi
 
 if [ ! -d "${outDir}" ]; then
-	printf "Katalog %s nie istnieje!\n" "${outDir}";
+	echo "Katalog ${outDir} nie istnieje!"
 	exit 11
 fi
 
@@ -27,28 +25,28 @@ while getopts ":p:t:" opt; do
 	case "${opt}" in
 		p) path="${OPTARG}" ;;
 		t) mType="${OPTARG}" ;;
-		:) printf "Opcja -%s wymaga argumentu.\n" "${OPTARG}" ; exit 12 ;;
-		?) printf "Niewłaściwa opcja: -%s.\n" "${OPTARG}" ; exit 13 ;;
+		:) echo "Opcja -${OPTARG} wymaga argumentu." ; exit 12 ;;
+		?) echo "Niewłaściwa opcja: -${OPTARG}." ; exit 13 ;;
 	esac
 done
 
 if [ -z "${path}" ] ; then
-	printf "Brak / za malo danych.\n"
-	printf "Użycie: ./ripvid.sh -p <sciezka_do_katalogu_z_plikiem/plikami>\n"
+	echo "Brak / za malo danych."
+	echo "Użycie: ./ripvid.sh -p <sciezka_do_katalogu_z_plikiem/plikami>"
 	exit 14
 fi
 
 case "${mType}" in
-	n|N) printf "Wybrano opcję: Napisy.\n" && mediaType='Napisy' ;;
-	p|P) printf "Wybrano opcję: PL.\n" && mediaType='PL' ;;
-	d|D) printf "Wybrano opcję: Dubbing.\n" && mediaType='Dubbing' ;;
-	e|E) printf "Wybrano opcję: ENG.\n" && mediaType='ENG' ;;
-	*)   printf "Wybrano opcję: Lektor.\n" && mediaType='Lektor' ;;
+	n|N) echo "Wybrano opcję: Napisy." && mediaType='Napisy' ;;
+	p|P) echo "Wybrano opcję: PL." && mediaType='PL' ;;
+	d|D) echo "Wybrano opcję: Dubbing." && mediaType='Dubbing' ;;
+	e|E) echo "Wybrano opcję: ENG." && mediaType='ENG' ;;
+	*)   echo "Wybrano opcję: Lektor." && mediaType='Lektor' ;;
 esac
 
 #Na początek: łapiemy CTRL + C i usuwamy nasz katalog w razie czego
 cleanup() {
-	printf "\nSprzątamy...\n"
+	echo "Sprzątamy..."
 	rm -rf "${fTmp}"
 	exit 1
 }
@@ -75,12 +73,12 @@ vodCheck(){
 		#tutaj iterujemy po całej tablicy i wykonujemy wstępne sprawdzenie czy video wogóle istnieje na tym vod czy nie zostało usunięte
 		if [ "${testLine}" ]; then
 			for line in "${testLine[@]}"; do
-				testVod=$( printf "%s" "${line}" | sed -n 's/^.*\/\/\([^.]*\)\..*$/\1/p' )
+				testVod=$( echo "${line}" | sed -n 's/^.*\/\/\([^.]*\)\..*$/\1/p' )
 				#lulu może być "lulu" ablo "luluvdo", więc zmieniamy
 				[ "${testVod}" == "lulu" ] && testVod='luluvdo'
-				testLink=$( printf "%s" "${line}" | cut -d "@" -f1 )
+				testLink=$( echo "${line}" | cut -d "@" -f1 )
 				#testujemy
-				printf "Sprawdzam: %s \n" "${testLink}"
+				echo "Sprawdzam: ${testLink}"
 				"${testVod}"Test "${testLink}"
 				#Jeśli nie mamy błędu to dopisujemy do ostatecznej tablicy lines()
 				if [ "${isOK}" = true ]; then
@@ -89,10 +87,10 @@ vodCheck(){
 				fi
 			done
 		else
-			printf "Brak źródeł dla tego filmu dla wybranej wersji: %s \n" "${mediaType}"
-			printf "Dostępne możliwości do wyboru to: \n"
+			echo "Brak źródeł dla tego filmu dla wybranej wersji: ${mediaType}"
+			echo "Dostępne możliwości do wyboru to: "
 			versions=($( awk -F'@' '{ print $2 }' "${1}" | sort -u ))
-			printf "[%s] \n" "${versions[@]}"
+			echo "${versions[@]}"
 		fi
 	done
 }
@@ -108,22 +106,22 @@ streamtapeTest(){
 }
 
 streamtape(){
-	if [[ "${1}" != *"/e/"* ]]; then 
-		link=$( printf "%s" "${1}" | sed 's/com\/v\//com\/e\//')
+	if [[ "${1}" != *"/e/"* ]]; then
+		link=$( echo "${1}" | sed 's/com\/v\//com\/e\//')
 	fi
 
-	videoID=$( printf "%s" "${link}" | cut -d '/' -f5 )
+	videoID=$( echo "${link}" | cut -d '/' -f5 )
 	videoURL=$( curl -sL "${link}" | grep "'botlink'" | sed -n "s/.*\(\&expires.*\)'.*/\1/p" | sed "s/^/https:\/\/streamtape.com\/get_video?id=${videoID}/;s/$/\&stream=1/" )
 	curlOpts=''
 
 	if [ "${seriesTitle}" ] && [ "${seasonNumber}" ] && [ "${episodeTitle}" ]; then
 		curl -L "${videoURL}" -o "${outDir}"/"${seriesTitle}"/"${seasonNumber}"/"${fullEpisodeTitle}".mp4
-		printf "\n\nFilm zapisany w %s/%s/%s/%s.mp4 \n\n" "${outDir}" "${seriesTitle}" "${seasonNumber}" "${fullEpisodeTitle}"
+		echo "Film zapisany w ${outDir}/${seriesTitle}/${seasonNumber}/${fullEpisodeTitle}.mp4"
 	else
 		[ ! -d "${outDir}"/"${title}" ] && mkdir -p "${outDir}"/"${title}"
 		curl -L "${videoURL}" -o "${outDir}"/"${title}"/"${title}".mp4
-		printf "\n\nFilm zapisany w %s/%s/%s.mp4 \n\n" "${outDir}" "${title}" "${title}"
-	fi	
+		echo "Film zapisany w ${outDir}/${title}/${title}.mp4"
+	fi
 }
 
 vidozaTest(){
@@ -142,11 +140,11 @@ vidoza(){
 
 	if [ "${seriesTitle}" ] && [ "${seasonNumber}" ] && [ "${episodeTitle}" ]; then
 		curl "${videoURL}" -o "${outDir}"/"${seriesTitle}"/"${seasonNumber}"/"${fullEpisodeTitle}".mp4
-		printf "\n\nFilm zapisany w %s/%s/%s/%s.mp4 \n\n" "${outDir}" "${seriesTitle}" "${seasonNumber}" "${fullEpisodeTitle}"
+		echo "Film zapisany w ${outDir}/${seriesTitle}/${seasonNumber}/${fullEpisodeTitle}.mp4"
 	else
 		[ ! -d "${outDir}"/"${title}" ] && mkdir -p "${outDir}"/"${title}"
 		curl "${videoURL}" -o "${outDir}"/"${title}"/"${title}".mp4
-		printf "\n\nFilm zapisany w %s/%s/%s.mp4 \n\n" "${outDir}" "${title}" "${title}"
+		echo "Film zapisany w ${outDir}/${title}/${title}.mp4"
 	fi
 }
 
@@ -161,13 +159,13 @@ vidmolyTest(){
 }
 
 vidmoly(){
-	if [[ "${1}" != *"embed"* ]]; then 
-		link=$( printf "%s" "${1}" | sed -n 's/\(https.*\)\(.me\/w\/\)\(.*\)$/\1.to\/embed-\3.html/p')
+	if [[ "${1}" != *"embed"* ]]; then
+		link=$( echo "${1}" | sed -n 's/\(https.*\)\(.me\/w\/\)\(.*\)$/\1.to\/embed-\3.html/p')
 	fi
 
 	curlOpts=( "-H" "User-Agent: Mozilla/5.0" "-H" "Referer: https://vidmoly.to/" )
 	fullURL=$( wget "${link}" -qO- | grep sources: | cut -d '"' -f2 )
-	mainURL=$( printf "%s" "${fullURL}" |  tr -d ',' | sed -n 's/\(^.*\)\.urlset.*/\1/p' )
+	mainURL=$( echo "${fullURL}" |  tr -d ',' | sed -n 's/\(^.*\)\.urlset.*/\1/p' )
 	partsPATH=$( curl -sL "${fullURL}" "${curlOpts[@]}" | grep index | head -n1 )
 	curl -sL "${partsPATH}" "${curlOpts[@]}" | sed -n 's/^.*\(seg.*$\)/\1/p' > "${partsList}"
 }
@@ -188,14 +186,20 @@ lulustream(){
 
 		link=$( curl -sL "${1}" | grep sources | cut -d '"' -f2  )
 
-		mainURL=$( printf "%s" "${link}" | sed -n 's/\(^.*\)\/master.*$/\1/p' )
+		mainURL=$( echo "${link}" | sed -n 's/\(^.*\)\/master.*$/\1/p' )
 		partsPATH=$( curl -sL "${link}" | grep index )
 		curl -sL "${partsPATH}" | sed -n 's/^.*\(seg.*$\)/\1/p' > "${partsList}"
-		curl -sL $(curl -sL "${partsPATH}" | grep enc | cut -d '"' -f2) > "${tmpDir}"/encryption.key
-		
+		#curl -sL $(curl -sL "${partsPATH}" | grep enc | cut -d '"' -f2) > "${tmpDir}"/encryption.key
+		#patrzymy czy potrzebny jest klucz szyfrujący
+		response=$(curl -sL "${partsPATH}")
+		if echo "${response}" | grep -q "enc"; then
+			key_url=$(echo "${response}" | grep enc | cut -d '"' -f2)
+			curl -sL "${key_url}" -o "${tmpDir}/encryption.key"
+		fi
+
 	else
 
-		printf "Nie mogę znaleźć linku do źródeł.\n"
+		echo "Nie mogę znaleźć linku do źródeł."
 
 	fi
 
@@ -206,9 +210,9 @@ lulustreamDecrypt(){
 		NUM=$(echo "${f}" | grep -oP '\d+(?=\.ts)'  | tr -d '0' )
 		NAME=${f##*/}
 		IV=$(printf "%032x" "$NUM")
-		printf "Odszyfrowywanie %s.\n" "${f}"
+		echo "Odszyfrowywanie ${f}."
 		openssl aes-128-cbc -d -in "${f}" -out "${tmpDir}"/dec-"${NAME}" -nosalt -iv "${IV}" -K "$(xxd -p "${tmpDir}"/encryption.key | tr -d '\n')"
-		#Po zdekodowaniu adpisujemy oryginał
+		#Po zdekodowaniu nadpisujemy oryginał
 		mv "${tmpDir}"/dec-"${NAME}" "${f}"
 	done
 }
@@ -237,19 +241,19 @@ getVideo(){
 		count=1;
 			while read -r line ; do
 				nazwa=$(printf "%03d" "${count}");
-				printf "Pobieram część %s z %s\n" "${count}" "${ilosc}"
+				echo "Pobieram część ${count} z ${ilosc}"
 				curl -sL "${mainURL}"/"${line}" "${curlOpts[@]}" -o "${tmpDir}"/"${nazwa}".ts
 				count=$((count+1))
 			done<"${partsList}"
 
 		if [ -f "${tmpDir}"/encryption.key ]; then
-			luluvdoDecrypt
+			lulustreamDecrypt
 		fi
 
 		cat $(ls "${tmpDir}"/*.ts) > "${outDir}"/"${title}"/"${title}".ts 
-		printf "\n\nFilm zapisany w %s/%s/%s.ts \n\n" "${outDir}" "${title}" "${title}"
+		echo "Film zapisany w ${outDir}/${title}/${title}.ts"
 	else
-		printf "Plik %s wygląda na pusty!\n" "${partsList}"
+		echo "Plik ${partsList} wygląda na pusty!"
 	fi
 }
 
@@ -260,7 +264,7 @@ getSeries(){
 		count=1;
 			while read line ; do
 					nazwa=$(printf "%03d" "${count}");
-					printf "Pobieram część %s z %s\n" "${count}" "${ilosc}"
+					echo "Pobieram część ${count} z ${ilosc}"
 					curl -sL "${mainURL}"/"${line}" "${curlOpts[@]}" -o "${tmpDir}"/"${nazwa}".ts
 					count=$((count+1))
 			done<"${partsList}"
@@ -268,11 +272,11 @@ getSeries(){
 		if [ -f "${tmpDir}"/encryption.key ]; then
 			lulustreamDecrypt
 		fi
-		
-		cat $(ls "${tmpDir}"/*.ts) > "${outDir}"/"${seriesTitle}"/"${seasonNumber}"/"${fullEpisodeTitle}".ts 
-		printf "\n\nFilm zapisany w %s/%s/%s/%s.ts \n\n" "${outDir}" "${seriesTitle}" "${seasonNumber}" "${fullEpisodeTitle}"
+
+		cat $(ls "${tmpDir}"/*.ts) > "${outDir}"/"${seriesTitle}"/"${seasonNumber}"/"${fullEpisodeTitle}".ts
+		echo "Film zapisany w ${outDir}/${seriesTitle}/${seasonNumber}/${fullEpisodeTitle}.ts"
 	else
-		printf "Plik %s wygląda na pusty!\n" "${partsList}"
+		echo "Plik ${partsList} wygląda na pusty!"
 	fi
 }
 
@@ -300,11 +304,11 @@ for file in "${path}"*; do
 			isThere=$( ls "${outDir}/${title}/${title}".* 2>/dev/null )
 
 			if [ "${isThere}" ]; then
-				printf "Plik ${isThere##*/} już istnieje: %s \n" "${isThere}"
+				echo "Plik ${isThere##*/} już istnieje: ${isThere}"
 			else
 				make_dir "${title}"
 				mkdir -p "${outDir}/${title}"
-				printf "Pobieram %s z %s...\n\n" "${title}" "${myVod}"
+				echo "Pobieram ${title} z ${myVod}..."
 				if [[ "${myVod}" == 'vidoza' || "${myVod}" == 'streamtape' ]] ; then
 					"${myVod}" "${link}"
 				else
@@ -328,11 +332,11 @@ for file in "${path}"*; do
 			isThere=$( ls "${outDir}/${seriesTitle}/${seasonNumber}/${fullEpisodeTitle}".* 2>/dev/null )
 
 			if [ "${isThere}" ]; then
-				printf "Plik ${isThere##*/} już istnieje: %s \n" "${isThere}"
+				echo "Plik ${isThere##*/} już istnieje: ${isThere}"
 			else
 				make_dir "${episodeTitle}"
 				mkdir -p "${outDir}/${seriesTitle}/${seasonNumber}"
-				printf "Pobieram %s - %s z %s...\n\n" "${seriesTitle}" "${episodeTitle}" "${myVod}"
+				echo "Pobieram ${seriesTitle} - ${episodeTitle} z ${myVod}..."
 				if [[ "${myVod}" == 'vidoza' || "${myVod}" == 'streamtape' ]] ; then
 					"${myVod}" "${link}"
 				else
@@ -347,4 +351,4 @@ for file in "${path}"*; do
 
 done
 
-rm -rf "${fTmp}" >/dev/null 2>&1
+#rm -rf "${fTmp}" >/dev/null 2>&1
