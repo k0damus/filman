@@ -4,6 +4,7 @@ set -e
 #Wyedytuj linię poniżej według własnych potrzeb 
 outDir="${HOME}"/minidlna/torrent/complete
 fTmp='/tmp/filman'
+mType=''
 reqCheck=()
 
 req=('/usr/bin/curl' '/usr/bin/openssl')
