@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-#set -u
-#set -e
+set -u
+set -e
 #Wyedytuj linię poniżej według własnych potrzeb 
 outDir="${HOME}"/minidlna/torrent/complete
 fTmp='/tmp/filman'
@@ -79,6 +79,7 @@ vodCheck(){
 				[ "${testVod}" == "lulu" ] && testVod='luluvdo'
 				testLink=$( printf "%s" "${line}" | cut -d "@" -f1 )
 				#testujemy
+				printf "Sprawdzam: %s \n" "${testLink}"
 				"${testVod}"Test "${testLink}"
 				#Jeśli nie mamy błędu to dopisujemy do ostatecznej tablicy lines()
 				if [ "${isOK}" = true ]; then
@@ -96,23 +97,13 @@ vodCheck(){
 }
 
 #Obsługa pobierania z różnych VOD (napierw TEST później funkcja wybierająca właściwe pliki)
-:<<'voeOFF'
-voeTest(){
-	[[ -z $( curl -sL "${1}" | grep '404 - Not found' ) ]] && isOK=true || isOK=false
-}
-
-voe(){
-	curlOpts=''
-	followUp=$( curl -sL "${link}" | sed -n "s/^.*\(https.*\)'.*$/\1/p" | head -n 1 )
-	fullURL=$( curl -sL "${followUp}" | grep "hls':" | cut -d "'" -f4 | base64 -d)
-	mainURL=$( printf "%s" "${fullURL}" | sed -n 's/\(^.*\)\/master.*$/\1/p')
-	partsPATH=$( curl -sL "${fullURL}" | grep ^index ) 
-	curl -sL "${mainURL}"/"${partsPATH}" | grep -v ^# > "${partsList}"
-}
-voeOFF
-
 streamtapeTest(){
-	[[ -z $(curl -sL "${1}" | grep 'Video not found') ]] && isOK=true || isOK=false
+	dataCheck=$(curl -sL "${1}" --max-time 5)
+	if [[ -z "${dataCheck}" || "${dataCheck}" == *"Video not found"* ]]; then
+		isOK=false
+	else
+		isOK=true
+	fi
 }
 
 streamtape(){
@@ -135,7 +126,13 @@ streamtape(){
 }
 
 vidozaTest(){
-	[[ -z $(curl -sL "${1}" | grep 'File was deleted') ]] && isOK=true || isOK=false
+	#[[ -z $(curl -sL "${1}" --max-time 5 | grep 'File was deleted') ]] && isOK=true || isOK=false
+	dataCheck=$(curl -sL "${1}" --max-time 5)
+	if [[ -z "${dataCheck}" || "${dataCheck}" == *"File was deleted"* ]]; then
+		isOK=false
+	else
+		isOK=true
+	fi
 }
 
 vidoza(){
@@ -153,7 +150,13 @@ vidoza(){
 }
 
 vidmolyTest(){
-	[[ -z $(curl -sL "${1}" -H "User-Agent: Mozilla/5.0" -H "Referer: https://vidmoly.to/" | grep 'notice.php') ]] && isOK=true || isOK=false
+	#[[ -z $(curl -sL "${1}" --max-time 5 -H "User-Agent: Mozilla/5.0" -H "Referer: https://vidmoly.to/" | grep 'notice.php') ]] && isOK=true || isOK=false
+	dataCheck=$(curl -sL "${1}" --max-time 5 -H "User-Agent: Mozilla/5.0" -H "Referer: https://vidmoly.to/")
+	if [[ -z "${dataCheck}" || "${dataCheck}" == *"notice.php"* ]]; then
+		isOK=false
+	else
+		isOK=true
+	fi	
 }
 
 vidmoly(){
@@ -168,11 +171,17 @@ vidmoly(){
 	curl -sL "${partsPATH}" "${curlOpts[@]}" | sed -n 's/^.*\(seg.*$\)/\1/p' > "${partsList}"
 }
 
-luluvdoTest(){
-	[[ -z $(curl -sL "${1}" -H "User-Agent: Mozilla/5.0" | grep 'been deleted') ]] && isOK=true || isOK=false
+lulustreamTest(){
+	#[[ -z $(curl -sL "${1}" --max-time 5 -H "User-Agent: Mozilla/5.0" | grep 'been deleted') ]] && isOK=true || isOK=false
+	dataCheck=$(curl -sL "${1}" --max-time 5 -H "User-Agent: Mozilla/5.0")
+	if [[ -z "${dataCheck}" || "${dataCheck}" == *"been deleted"* ]]; then
+		isOK=false
+	else
+		isOK=true
+	fi		
 }
 
-luluvdo(){
+lulustream(){
 
 	if grep -q sources < <( curl -sL "${1}" ); then 
 
@@ -191,7 +200,7 @@ luluvdo(){
 
 }
 
-luluvdoDecrypt(){
+lulustreamDecrypt(){
 	for f in "${tmpDir}"/*.ts; do
 		NUM=$(echo "${f}" | grep -oP '\d+(?=\.ts)'  | tr -d '0' )
 		NAME=${f##*/}
@@ -205,30 +214,17 @@ luluvdoDecrypt(){
 
 savefilesTest(){
 	input_test=$( curl -sL "https://savefiles.com/dl?op=embed&file_code=${1##*/}&auto=1" -H "Referer: ${1}"  )
-	[[ -z $(curl -sL "${input_test}" -H "User-Agent: Mozilla/5.0" | grep 'been deleted') ]] && isOK=true || isOK=false
+	#[[ -z $(curl -sL "${input_test}" --max-time 5 -H "User-Agent: Mozilla/5.0" | grep 'been deleted') ]] && isOK=true || isOK=false
+	dataCheck=$(curl -sL "${input_test}" --max-time 5 -H "User-Agent: Mozilla/5.0")
+	if [[ -z "${dataCheck}" || "${dataCheck}" == *"been deleted"* ]]; then
+		isOK=false
+	else
+		isOK=true
+	fi	
+
 }
 savefiles(){
 	partsPATH=$( curl -sL "https://savefiles.com/dl?op=embed&file_code=${1##*/}&auto=1" -H "Referer: ${1}" | grep hls | sed -n 's/^.*\(https.*\)"}].*$/\1/p' )
-	# echo $partsPATH
-	# e_and_srv=($( echo "${input_data}" | sed -n 's/^.*file|100|\(.*\)|.*|\([a-z0-9]*\)|setCurrent.*$/\1 \2/p'  ))
-	# main_url=($( echo "${input_data}" | sed -n 's/^.*srv|\(.*|\)sources.*$/\1/p' | tr '|' '\n' | tac  | tr '\n' ' ' ))
-	# token_tmp=($( echo "${main_url[@]}" | sed -n 's/^.*m3u8 \(.*\) 43200$/\1/p' ))
-
-	# if [ "${#token_tmp[@]}" -gt 1 ]; then
-	# 	IFS=-;
-	# 	token=$( echo "${token_tmp[*]}" )
-	# 	unset IFS
-	# else
-	# 	token="${token_tmp[@]}"
-	# fi
-
-	# s=$( echo "${input_data}" | sed -n 's/^.*|view|\(.*\)|video_ad|.*$/\1/p' )
-	# v=$( echo "${input_data}" | sed -n 's/^.*|ls|\(.*\)|vvplay|.*$/\1/p' )
-	
-	# all=( "${main_url[0]}" "${main_url[1]}" "${e_and_srv[0]}" "${main_url[2]}" "${token}" "${s}" "${main_url[1]}" "${v}" "${e_and_srv[1]}" )
-	
-	# partsPATH="https://${all[0]}.savefiles.com/${all[1]}/01/${all[2]}/,${all[3]},.urlset/master.m3u8?t=${all[4]}&s=${all[5]}&e=${all[6]}&v=${all[7]}&srv=${all[8]}&i=0.0&sp=0"
-	# curl -sL "${partsPATH}" # | grep index
 	partsLINK=$( curl -sL "${partsPATH}" | grep index )
 	mainURL="${partsLINK%/*}"
 	curl -sL "${partsLINK}" | grep ^https | cut -d '/' -f 8- > "${partsList}"
@@ -269,7 +265,7 @@ getSeries(){
 			done<"${partsList}"
 		
 		if [ -f "${tmpDir}"/encryption.key ]; then
-			luluvdoDecrypt
+			lulustreamDecrypt
 		fi
 		
 		cat $(ls "${tmpDir}"/*.ts) > "${outDir}"/"${seriesTitle}"/"${seasonNumber}"/"${fullEpisodeTitle}".ts 
@@ -349,6 +345,5 @@ for file in "${path}"*; do
 	done
 
 done
-
 
 rm -rf "${fTmp}" >/dev/null 2>&1
