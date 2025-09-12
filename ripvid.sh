@@ -13,27 +13,27 @@ done
 
 if [ "${#reqCheck[@]}" -gt 0 ]; then
 	echo "Brak tych programów: ${reqCheck[*]} Zainstaluj."
-	exit 10
+	exit 1
 fi
 
 if [ ! -d "${outDir}" ]; then
 	echo "Katalog ${outDir} nie istnieje!"
-	exit 11
+	exit 1
 fi
 
 while getopts ":p:t:" opt; do
 	case "${opt}" in
 		p) path="${OPTARG}" ;;
 		t) mType="${OPTARG}" ;;
-		:) echo "Opcja -${OPTARG} wymaga argumentu." ; exit 12 ;;
-		?) echo "Niewłaściwa opcja: -${OPTARG}." ; exit 13 ;;
+		:) echo "Opcja -${OPTARG} wymaga argumentu." ; exit 1 ;;
+		?) echo "Niewłaściwa opcja: -${OPTARG}." ; exit 1 ;;
 	esac
 done
 
 if [ -z "${path}" ] ; then
 	echo "Brak / za malo danych."
 	echo "Użycie: ./ripvid.sh -p <sciezka_do_katalogu_z_plikiem/plikami>"
-	exit 14
+	exit 1
 fi
 
 case "${mType}" in
@@ -46,8 +46,10 @@ esac
 
 #Na początek: łapiemy CTRL + C i usuwamy nasz katalog w razie czego
 cleanup() {
+	echo
 	echo "Sprzątamy..."
 	rm -rf "${fTmp}"
+	echo
 	exit 1
 }
 
@@ -69,7 +71,7 @@ vodCheck(){
 	lines=()
 	for m in "${movies[@]}"; do
 		#tu tworzymy tablicę z wszystkimi wynikami pasującymi do: nazwa serialu + typ video + szukany vod
-		testLine=($( grep "${m}" "${file}" | grep "${mediaType}" | grep -E "streamtape|savefiles|vidoza|vidmoly|lulu" )) #| head -n 1 ))
+		testLine=($( grep "${m}" "${file}" | grep "${mediaType}" | grep -E "vidmoly|lulu|streamtape|savefiles|vidoza" )) #| head -n 1 ))
 		#tutaj iterujemy po całej tablicy i wykonujemy wstępne sprawdzenie czy video wogóle istnieje na tym vod czy nie zostało usunięte
 		if [ "${testLine}" ]; then
 			for line in "${testLine[@]}"; do
@@ -163,11 +165,16 @@ vidmoly(){
 		link=$( echo "${1}" | sed -n 's/\(https.*\)\(.me\/w\/\)\(.*\)$/\1.to\/embed-\3.html/p')
 	fi
 
-	curlOpts=( "-H" "User-Agent: Mozilla/5.0" "-H" "Referer: https://vidmoly.to/" )
+	curlOpts=("-H" "User-Agent: Mozilla/5.0" "-H" "Referer: https://vidmoly.to/")
+	# echo $curl
 	fullURL=$( wget "${link}" -qO- | grep sources: | cut -d '"' -f2 )
+	# echo $fullURL
 	mainURL=$( echo "${fullURL}" |  tr -d ',' | sed -n 's/\(^.*\)\.urlset.*/\1/p' )
+	# echo $mainURL
 	partsPATH=$( curl -sL "${fullURL}" "${curlOpts[@]}" | grep index | head -n1 )
-	curl -sL "${partsPATH}" "${curlOpts[@]}" | sed -n 's/^.*\(seg.*$\)/\1/p' > "${partsList}"
+	# echo $partsPATH
+	curl -sL "${partsPATH}" "${curlOpts[@]}" | grep -v ^# > "${partsList}" # | sed -n 's/^.*\(seg.*$\)/\1/p' > "${partsList}"
+
 }
 
 lulustreamTest(){
@@ -188,7 +195,7 @@ lulustream(){
 
 		mainURL=$( echo "${link}" | sed -n 's/\(^.*\)\/master.*$/\1/p' )
 		partsPATH=$( curl -sL "${link}" | grep index )
-		curl -sL "${partsPATH}" | sed -n 's/^.*\(seg.*$\)/\1/p' > "${partsList}"
+		curl -sL "${partsPATH}" | grep -v ^# > "${partsList}" # | sed -n 's/^.*\(seg.*$\)/\1/p' > "${partsList}"
 		#curl -sL $(curl -sL "${partsPATH}" | grep enc | cut -d '"' -f2) > "${tmpDir}"/encryption.key
 		#patrzymy czy potrzebny jest klucz szyfrujący
 		response=$(curl -sL "${partsPATH}")
@@ -218,33 +225,39 @@ lulustreamDecrypt(){
 }
 
 savefilesTest(){
-	input_test=$( curl -sL "https://savefiles.com/dl?op=embed&file_code=${1##*/}&auto=1" -H "Referer: ${1}"  )
-	#[[ -z $(curl -sL "${input_test}" --max-time 5 -H "User-Agent: Mozilla/5.0" | grep 'been deleted') ]] && isOK=true || isOK=false
-	dataCheck=$(curl -sL "${input_test}" --max-time 5 -H "User-Agent: Mozilla/5.0")
+	dataCheck=$( curl -sL "https://savefiles.com/dl?op=embed&file_code=${1##*/}&auto=1" -H "Referer: ${1}"  )
 	if [[ -z "${dataCheck}" || "${dataCheck}" == *"been deleted"* ]]; then
 		isOK=false
 	else
 		isOK=true
 	fi	
-
 }
+
 savefiles(){
 	partsPATH=$( curl -sL "https://savefiles.com/dl?op=embed&file_code=${1##*/}&auto=1" -H "Referer: ${1}" | grep hls | sed -n 's/^.*\(https.*\)"}].*$/\1/p' )
 	partsLINK=$( curl -sL "${partsPATH}" | grep index )
 	mainURL="${partsLINK%/*}"
-	curl -sL "${partsLINK}" | grep ^https | cut -d '/' -f 8- > "${partsList}"
+	curl -sL "${partsLINK}" | grep -v ^# > "${partsList}" #| grep ^https | cut -d '/' -f 8- > "${partsList}"
 }
+
 #Obsługa pobrania POJEDYNCZEGO filmu
 getVideo(){
-	if [ "$( cat "${partsList}" )" ] ; then
-		ilosc=$( wc -l < "${partsList}" )
-		count=1;
-			while read -r line ; do
-				nazwa=$(printf "%03d" "${count}");
-				echo "Pobieram część ${count} z ${ilosc}"
-				curl -sL "${mainURL}"/"${line}" "${curlOpts[@]}" -o "${tmpDir}"/"${nazwa}".ts
-				count=$((count+1))
-			done<"${partsList}"
+  if [ -s "${partsList}" ]; then
+    ilosc=$(wc -l < "${partsList}")
+    echo "Do pobrania ${ilosc} części."
+
+    <"${partsList}" xargs -n3 -P50 bash -c '
+    	url="${1}"
+    	outfile="${2}"
+		vod="${3}"
+    	part=$(basename "${outfile}" .ts)
+    	echo "Pobieram część ${part} z '"${ilosc}"'"
+		if [ "${vod}" == "vidmoly" ]; then
+      		curl -sL -H "User-Agent: Mozilla/5.0" -H "Referer: https://vidmoly.to/" "${url}" -o "${outfile}"
+	  	else
+	  		curl -sL "${url}" -o "${outfile}"
+	  	fi
+	  	' _
 
 		if [ -f "${tmpDir}"/encryption.key ]; then
 			lulustreamDecrypt
@@ -259,26 +272,34 @@ getVideo(){
 
 #Obsługa pobierania seriali - ładuje filmy do ładnej struktury katalogów, wedle schematu:
 getSeries(){
-	if [ "$( cat "${partsList}" )" ] ; then
-		ilosc=$( wc -l < "${partsList}" )
-		count=1;
-			while read line ; do
-					nazwa=$(printf "%03d" "${count}");
-					echo "Pobieram część ${count} z ${ilosc}"
-					curl -sL "${mainURL}"/"${line}" "${curlOpts[@]}" -o "${tmpDir}"/"${nazwa}".ts
-					count=$((count+1))
-			done<"${partsList}"
-		
-		if [ -f "${tmpDir}"/encryption.key ]; then
-			lulustreamDecrypt
-		fi
+  if [ -s "${partsList}" ]; then
+    ilosc=$(wc -l < "${partsList}")
+    echo "Do pobrania ${ilosc} części."
 
-		cat $(ls "${tmpDir}"/*.ts) > "${outDir}"/"${seriesTitle}"/"${seasonNumber}"/"${fullEpisodeTitle}".ts
-		echo "Film zapisany w ${outDir}/${seriesTitle}/${seasonNumber}/${fullEpisodeTitle}.ts"
-	else
-		echo "Plik ${partsList} wygląda na pusty!"
-	fi
+    <"${partsList}" xargs -n3 -P50 bash -c '
+    	url="${1}"
+    	outfile="${2}"
+		vod="${3}"
+    	part=$(basename "${outfile}" .ts)
+    	echo "Pobieram część ${part} z '"${ilosc}"'"
+		if [ "${vod}" == "vidmoly" ]; then
+      		curl -sL -H "User-Agent: Mozilla/5.0" -H "Referer: https://vidmoly.to/" "${url}" -o "${outfile}"
+	  	else
+	  		curl -sL "${url}" -o "${outfile}"
+	  	fi
+	  	' _
+
+    if [ -f "${tmpDir}/encryption.key" ]; then
+      lulustreamDecrypt
+    fi
+
+    cat "${tmpDir}"/*.ts > "${outDir}/${seriesTitle}/${seasonNumber}/${fullEpisodeTitle}.ts"
+    echo "Film zapisany w ${outDir}/${seriesTitle}/${seasonNumber}/${fullEpisodeTitle}.ts"
+  else
+    echo "Plik ${partsList} wygląda na pusty!"
+  fi
 }
+
 
 #CZĘŚĆ GŁÓWNA
 #####################################################
@@ -313,6 +334,8 @@ for file in "${path}"*; do
 					"${myVod}" "${link}"
 				else
 					"${myVod}" "${link}"
+					#Taka mała magia, żeby mieć fajne dane wejściowe do xargs
+					awk -v dir="${tmpDir}" -v vod="${myVod}" '{printf "%s %s/%03d.ts %s\n", $0, dir, NR, vod}' ${partsList} > ${partsList}.tmp && mv ${partsList}.tmp ${partsList}
 					getVideo
 				fi
 			fi
@@ -341,6 +364,8 @@ for file in "${path}"*; do
 					"${myVod}" "${link}"
 				else
 					"${myVod}" "${link}"
+					#Taka mała magia, żeby mieć fajne dane wejściowe do xargs
+					awk -v dir="${tmpDir}" -v vod="${myVod}" '{printf "%s %s/%03d.ts %s\n", $0, dir, NR, vod}' ${partsList} > ${partsList}.tmp && mv ${partsList}.tmp ${partsList}
 					getSeries
 				fi
 				rm -rf "${tmpDir}"
@@ -351,4 +376,4 @@ for file in "${path}"*; do
 
 done
 
-#rm -rf "${fTmp}" >/dev/null 2>&1
+rm -rf "${fTmp}" >/dev/null 2>&1
