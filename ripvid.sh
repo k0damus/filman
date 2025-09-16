@@ -127,7 +127,6 @@ streamtape(){
 }
 
 vidozaTest(){
-	#[[ -z $(curl -sL "${1}" --max-time 5 | grep 'File was deleted') ]] && isOK=true || isOK=false
 	dataCheck=$(curl -sL "${1}" --max-time 5)
 	if [[ -z "${dataCheck}" || "${dataCheck}" == *"File was deleted"* ]]; then
 		isOK=false
@@ -151,7 +150,6 @@ vidoza(){
 }
 
 vidmolyTest(){
-	#[[ -z $(curl -sL "${1}" --max-time 5 -H "User-Agent: Mozilla/5.0" -H "Referer: https://vidmoly.to/" | grep 'notice.php') ]] && isOK=true || isOK=false
 	dataCheck=$(curl -sL "${1}" --max-time 5 -H "User-Agent: Mozilla/5.0" -H "Referer: https://vidmoly.to/")
 	if [[ -z "${dataCheck}" || "${dataCheck}" == *"notice.php"* ]]; then
 		isOK=false
@@ -226,7 +224,7 @@ savefiles(){
 	partsPATH=$( curl -sL "https://savefiles.com/dl?op=embed&file_code=${1##*/}&auto=1" -H "Referer: ${1}" | grep hls | sed -n 's/^.*\(https.*\)"}].*$/\1/p' )
 	partsLINK=$( curl -sL "${partsPATH}" | grep index )
 	mainURL="${partsLINK%/*}"
-	curl -sL "${partsLINK}" | grep -v ^# > "${partsList}" #| grep ^https | cut -d '/' -f 8- > "${partsList}"
+	curl -sL "${partsLINK}" | grep -v ^# > "${partsList}"
 }
 
 #Obsługa pobrania POJEDYNCZEGO filmu
