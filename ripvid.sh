@@ -166,19 +166,13 @@ vidmoly(){
 	fi
 
 	curlOpts=("-H" "User-Agent: Mozilla/5.0" "-H" "Referer: https://vidmoly.to/")
-	# echo $curl
 	fullURL=$( wget "${link}" -qO- | grep sources: | cut -d '"' -f2 )
-	# echo $fullURL
 	mainURL=$( echo "${fullURL}" |  tr -d ',' | sed -n 's/\(^.*\)\.urlset.*/\1/p' )
-	# echo $mainURL
 	partsPATH=$( curl -sL "${fullURL}" "${curlOpts[@]}" | grep index | head -n1 )
-	# echo $partsPATH
-	curl -sL "${partsPATH}" "${curlOpts[@]}" | grep -v ^# > "${partsList}" # | sed -n 's/^.*\(seg.*$\)/\1/p' > "${partsList}"
-
+	curl -sL "${partsPATH}" "${curlOpts[@]}" | grep -v ^# > "${partsList}"
 }
 
 lulustreamTest(){
-	#[[ -z $(curl -sL "${1}" --max-time 5 -H "User-Agent: Mozilla/5.0" | grep 'been deleted') ]] && isOK=true || isOK=false
 	dataCheck=$(curl -sL "${1}" --max-time 5 -H "User-Agent: Mozilla/5.0")
 	if [[ -z "${dataCheck}" || "${dataCheck}" == *"been deleted"* ]]; then
 		isOK=false
@@ -188,15 +182,13 @@ lulustreamTest(){
 }
 
 lulustream(){
-
 	if grep -q sources < <( curl -sL "${1}" ); then 
 
 		link=$( curl -sL "${1}" | grep sources | cut -d '"' -f2  )
 
 		mainURL=$( echo "${link}" | sed -n 's/\(^.*\)\/master.*$/\1/p' )
 		partsPATH=$( curl -sL "${link}" | grep index )
-		curl -sL "${partsPATH}" | grep -v ^# > "${partsList}" # | sed -n 's/^.*\(seg.*$\)/\1/p' > "${partsList}"
-		#curl -sL $(curl -sL "${partsPATH}" | grep enc | cut -d '"' -f2) > "${tmpDir}"/encryption.key
+		curl -sL "${partsPATH}" | grep -v ^# > "${partsList}"
 		#patrzymy czy potrzebny jest klucz szyfrujący
 		response=$(curl -sL "${partsPATH}")
 		if echo "${response}" | grep -q "enc"; then
@@ -205,11 +197,8 @@ lulustream(){
 		fi
 
 	else
-
 		echo "Nie mogę znaleźć linku do źródeł."
-
 	fi
-
 }
 
 lulustreamDecrypt(){
