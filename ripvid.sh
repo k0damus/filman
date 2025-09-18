@@ -273,9 +273,6 @@ for file in "${path}"*; do
 
 	vodCheck "${file}"
 
-	echo "${lines[@]}"
-
-
 	for dataLine in "${lines[@]}"; do
 
 		seriesCheck=$( grep 'Serial' <<< "${dataLine}" )
