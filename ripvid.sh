@@ -71,7 +71,7 @@ vodCheck(){
 	lines=()
 	for m in "${movies[@]}"; do
 		#tu tworzymy tablicę z wszystkimi wynikami pasującymi do: nazwa serialu + typ video + szukany vod
-		testLine=($( grep "${m}" "${file}" | grep "${mediaType}" | grep -E "vidmoly|lulu|streamtape|savefiles|vidoza" )) #| head -n 1 ))
+		testLine=($( grep "${m}" "${file}" | grep "${mediaType}" | grep -E "lulu|vidmoly|streamtape|savefiles|vidoza" )) #| head -n 1 ))
 		#tutaj iterujemy po całej tablicy i wykonujemy wstępne sprawdzenie czy video wogóle istnieje na tym vod czy nie zostało usunięte
 		if [ "${testLine}" ]; then
 			for line in "${testLine[@]}"; do
@@ -181,9 +181,7 @@ lulustreamTest(){
 
 lulustream(){
 	if grep -q sources < <( curl -sL "${1}" ); then 
-
 		link=$( curl -sL "${1}" | grep sources | cut -d '"' -f2  )
-
 		mainURL=$( echo "${link}" | sed -n 's/\(^.*\)\/master.*$/\1/p' )
 		partsPATH=$( curl -sL "${link}" | grep index )
 		curl -sL "${partsPATH}" | grep -v ^# > "${partsList}"
@@ -227,7 +225,7 @@ savefiles(){
 	curl -sL "${partsLINK}" | grep -v ^# > "${partsList}"
 }
 
-#Obsługa pobrania POJEDYNCZEGO filmu
+#Obsługa pobrania fragmentów filmu
 getVideo(){
   if [ -s "${partsList}" ]; then
     ilosc=$(wc -l < "${partsList}")
@@ -250,43 +248,21 @@ getVideo(){
 			lulustreamDecrypt
 		fi
 
-		cat $(ls "${tmpDir}"/*.ts) > "${outDir}"/"${title}"/"${title}".ts 
-		echo "Film zapisany w ${outDir}/${title}/${title}.ts"
 	else
 		echo "Plik ${partsList} wygląda na pusty!"
 	fi
 }
 
-#Obsługa pobierania seriali - ładuje filmy do ładnej struktury katalogów, wedle schematu:
-getSeries(){
-  if [ -s "${partsList}" ]; then
-    ilosc=$(wc -l < "${partsList}")
-    echo "Do pobrania ${ilosc} części."
-
-    <"${partsList}" xargs -n3 -P50 bash -c '
-    	url="${1}"
-    	outfile="${2}"
-		vod="${3}"
-    	part=$(basename "${outfile}" .ts)
-    	echo "Pobieram część ${part} z '"${ilosc}"'"
-		if [ "${vod}" == "vidmoly" ]; then
-      		curl -sL -H "User-Agent: Mozilla/5.0" -H "Referer: https://vidmoly.to/" "${url}" -o "${outfile}"
-	  	else
-	  		curl -sL "${url}" -o "${outfile}"
-	  	fi
-	  	' _
-
-    if [ -f "${tmpDir}/encryption.key" ]; then
-      lulustreamDecrypt
-    fi
-
-    cat "${tmpDir}"/*.ts > "${outDir}/${seriesTitle}/${seasonNumber}/${fullEpisodeTitle}.ts"
-    echo "Film zapisany w ${outDir}/${seriesTitle}/${seasonNumber}/${fullEpisodeTitle}.ts"
-  else
-    echo "Plik ${partsList} wygląda na pusty!"
-  fi
+#Zapis do odpowiednich katalogów z podziałem na film/serial
+saveVideo(){
+	if [ -z "${seriesCheck}" ]; then
+		cat $(ls "${tmpDir}"/*.ts) > "${outDir}"/"${title}"/"${title}".ts 
+		echo "Film zapisany w ${outDir}/${title}/${title}.ts"
+	else
+	    cat "${tmpDir}"/*.ts > "${outDir}/${seriesTitle}/${seasonNumber}/${fullEpisodeTitle}.ts"
+    	echo "Film zapisany w ${outDir}/${seriesTitle}/${seasonNumber}/${fullEpisodeTitle}.ts"
+	fi
 }
-
 
 #CZĘŚĆ GŁÓWNA
 #####################################################
@@ -296,6 +272,8 @@ rm -rf "${fTmp}" >/dev/null 2>&1 && mkdir -p "${fTmp}"
 for file in "${path}"*; do
 
 	vodCheck "${file}"
+
+	echo "${lines[@]}"
 
 	for dataLine in "${lines[@]}"; do
 
@@ -324,6 +302,7 @@ for file in "${path}"*; do
 					#Taka mała magia, żeby mieć fajne dane wejściowe do xargs
 					awk -v dir="${tmpDir}" -v vod="${myVod}" '{printf "%s %s/%03d.ts %s\n", $0, dir, NR, vod}' ${partsList} > ${partsList}.tmp && mv ${partsList}.tmp ${partsList}
 					getVideo
+					saveVideo
 				fi
 			fi
 
@@ -353,7 +332,8 @@ for file in "${path}"*; do
 					"${myVod}" "${link}"
 					#Taka mała magia, żeby mieć fajne dane wejściowe do xargs
 					awk -v dir="${tmpDir}" -v vod="${myVod}" '{printf "%s %s/%03d.ts %s\n", $0, dir, NR, vod}' ${partsList} > ${partsList}.tmp && mv ${partsList}.tmp ${partsList}
-					getSeries
+					getVideo
+					saveVideo
 				fi
 				rm -rf "${tmpDir}"
 			fi
