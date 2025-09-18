@@ -68,7 +68,7 @@ make_dir(){
 #Sprawdzamy z którego serwisu możemy pobrać dany film, tzn. czy w ogóle są dostępne linki.
 vodCheck(){
 	movies=($(cut -d '@' -f 3-  < "${file}" | sort -u  ))
-	lines=()
+	global lines=()
 	for m in "${movies[@]}"; do
 		#tu tworzymy tablicę z wszystkimi wynikami pasującymi do: nazwa serialu + typ video + szukany vod
 		testLine=($( grep "${m}" "${file}" | grep "${mediaType}" | grep -E "lulu|vidmoly|streamtape|savefiles|vidoza" )) #| head -n 1 ))
@@ -275,6 +275,7 @@ for file in "${path}"*; do
 
 	echo "${lines[@]}"
 
+
 	for dataLine in "${lines[@]}"; do
 
 		seriesCheck=$( grep 'Serial' <<< "${dataLine}" )
@@ -300,7 +301,7 @@ for file in "${path}"*; do
 				else
 					"${myVod}" "${link}"
 					#Taka mała magia, żeby mieć fajne dane wejściowe do xargs
-					awk -v dir="${tmpDir}" -v vod="${myVod}" '{printf "%s %s/%03d.ts %s\n", $0, dir, NR, vod}' ${partsList} > ${partsList}.tmp && mv ${partsList}.tmp ${partsList}
+					awk -v dir="${tmpDir}" -v vod="${myVod}" '{printf "%s %s/%03d.ts %s\n", $0, dir, NR, vod}' "${partsList}" > "${partsList}.tmp" && mv -f "${partsList}.tmp" "${partsList}"
 					getVideo
 					saveVideo
 				fi
@@ -331,7 +332,7 @@ for file in "${path}"*; do
 				else
 					"${myVod}" "${link}"
 					#Taka mała magia, żeby mieć fajne dane wejściowe do xargs
-					awk -v dir="${tmpDir}" -v vod="${myVod}" '{printf "%s %s/%03d.ts %s\n", $0, dir, NR, vod}' ${partsList} > ${partsList}.tmp && mv ${partsList}.tmp ${partsList}
+					awk -v dir="${tmpDir}" -v vod="${myVod}" '{printf "%s %s/%03d.ts %s\n", $0, dir, NR, vod}' "${partsList}" > "${partsList}.tmp" && mv -f "${partsList}.tmp" "${partsList}"
 					getVideo
 					saveVideo
 				fi
