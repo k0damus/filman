@@ -39,7 +39,11 @@ if (result) {
     // obrobka
     for (let i = 0; i < l.getElementsByTagName('tbody')[0].childElementCount; i++){
         let vodLink = l.getElementsByTagName('tbody')[0].children[i].getElementsByTagName('td')[1].querySelector('a').getAttribute('href');
-        let mediaType = l.getElementsByTagName('tbody')[0].children[i].getElementsByTagName('td')[2].innerText.replace(/Napisy PL/g,'Napisy');
+        let mediaType = l.getElementsByTagName('tbody')[0].children[i].getElementsByTagName('td')[2].innerText.replace(/Napisy PL|Polski/g, match => {
+            if (match === 'Napisy PL') return 'Napisy';
+            if (match === 'Polski') return 'PL';
+            return match;
+            });
         allData.push(vodLink+"@"+mediaType+"@"+videoType+"@"+seriesTitle+"@"+episodeTitleFormatted);
     }
 
@@ -53,7 +57,11 @@ if (result) {
 
     for (let i = 0; i < l.getElementsByTagName('tbody')[0].childElementCount; i++){
         let vodLink = l.getElementsByTagName('tbody')[0].children[i].getElementsByTagName('td')[1].querySelector('a').getAttribute('href');
-        let mediaType = l.getElementsByTagName('tbody')[0].children[i].getElementsByTagName('td')[2].innerText.replace(/Napisy PL/g,'Napisy');
+        let mediaType = l.getElementsByTagName('tbody')[0].children[i].getElementsByTagName('td')[2].innerText.replace(/Napisy PL|Polski/g, match => {
+            if (match === 'Napisy PL') return 'Napisy';
+            if (match === 'Polski') return 'PL';
+            return match;
+            });
         allData.push(vodLink+"@"+mediaType+"@"+videoType+"@"+movieTitle);
     }
 }

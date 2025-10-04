@@ -68,16 +68,17 @@ make_dir(){
 #Sprawdzamy z którego serwisu możemy pobrać dany film, tzn. czy w ogóle są dostępne linki.
 vodCheck(){
 	movies=($(cut -d '@' -f 3-  < "${file}" | sort -u  ))
-	global lines=()
+	lines=()
 	for m in "${movies[@]}"; do
 		#tu tworzymy tablicę z wszystkimi wynikami pasującymi do: nazwa serialu + typ video + szukany vod
-		testLine=($( grep "${m}" "${file}" | grep "${mediaType}" | grep -E "lulu|vidmoly|streamtape|savefiles|vidoza" )) #| head -n 1 ))
+		#testLine=($( grep "${m}" "${file}" | grep "${mediaType}" | grep -E "lulu|vidmoly|streamtape|savefiles|vidoza" )) #| head -n 1 ))
+		testLine=($( grep "${m}" "${file}" | grep "${mediaType}" | grep -E "vidmoly|lulu|savefiles" )) #| head -n 1 ))
 		#tutaj iterujemy po całej tablicy i wykonujemy wstępne sprawdzenie czy video wogóle istnieje na tym vod czy nie zostało usunięte
 		if [ "${testLine}" ]; then
 			for line in "${testLine[@]}"; do
 				testVod=$( echo "${line}" | sed -n 's/^.*\/\/\([^.]*\)\..*$/\1/p' )
 				#lulu może być "lulu" ablo "luluvdo", więc zmieniamy
-				[ "${testVod}" == "lulu" ] && testVod='luluvdo'
+				[[ "${testVod}" =~ lulu ]] && testVod='lulustream'
 				testLink=$( echo "${line}" | cut -d "@" -f1 )
 				#testujemy
 				echo "Sprawdzam: ${testLink}"
@@ -234,7 +235,7 @@ getVideo(){
     <"${partsList}" xargs -n3 -P50 bash -c '
     	url="${1}"
     	outfile="${2}"
-		vod="${3}"
+			vod="${3}"
     	part=$(basename "${outfile}" .ts)
     	echo "Pobieram część ${part} z '"${ilosc}"'"
 		if [ "${vod}" == "vidmoly" ]; then
@@ -255,13 +256,18 @@ getVideo(){
 
 #Zapis do odpowiednich katalogów z podziałem na film/serial
 saveVideo(){
-	if [ -z "${seriesCheck}" ]; then
-		cat $(ls "${tmpDir}"/*.ts) > "${outDir}"/"${title}"/"${title}".ts 
-		echo "Film zapisany w ${outDir}/${title}/${title}.ts"
+	if ls "${tmpDir}"/*.ts >/dev/null 2>&1; then
+		if [ -z "${seriesCheck}" ]; then
+			cat $(ls "${tmpDir}"/*.ts) > "${outDir}"/"${title}"/"${title}".ts 
+			echo "Film zapisany w ${outDir}/${title}/${title}.ts"
+		else
+	    	cat "${tmpDir}"/*.ts > "${outDir}/${seriesTitle}/${seasonNumber}/${fullEpisodeTitle}.ts"
+    		echo "Film zapisany w ${outDir}/${seriesTitle}/${seasonNumber}/${fullEpisodeTitle}.ts"
+		fi
 	else
-	    cat "${tmpDir}"/*.ts > "${outDir}/${seriesTitle}/${seasonNumber}/${fullEpisodeTitle}.ts"
-    	echo "Film zapisany w ${outDir}/${seriesTitle}/${seasonNumber}/${fullEpisodeTitle}.ts"
+		echo "Brak plików *.ts w ${tmpDir}"
 	fi
+
 }
 
 #CZĘŚĆ GŁÓWNA
@@ -270,6 +276,8 @@ saveVideo(){
 rm -rf "${fTmp}" >/dev/null 2>&1 && mkdir -p "${fTmp}"
 
 for file in "${path}"*; do
+
+	sed -i "s/'/_/g" "${file}" #xargs się pruje o apostrofy ', to je wypierdolimy'
 
 	vodCheck "${file}"
 
