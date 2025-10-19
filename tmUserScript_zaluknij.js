@@ -51,7 +51,7 @@ if (result) {
     videoType = 'Film';
 
     let t = document.querySelectorAll('h2')
-    let movieTitle = t[1].childNodes[1].innerText.replace(/ /g,'_').replace(/[:-]/g,"").replace(/\//g,"").replace(/__/g,"_");
+    let movieTitle = t[1].childNodes[0].textContent.replace(/ /g,'_').replace(/[:-]/g,"").replace(/\//g,"").replace(/__/g,"_");
 
     let l = document.getElementById('link-list');
 
