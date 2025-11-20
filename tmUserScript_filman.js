@@ -53,7 +53,7 @@ if (result) {
     videoType = 'Film';
 
     let t = document.querySelectorAll('h1')
-    let movieTitle = t[0].childNodes[1].innerText.replace(/ /g,'_').replace(/[:-]/g,"").replace(/\//g,"").replace(/__/g,"_");
+    let movieTitle = t[0].innerText.replace(/online.pl/g,'').replace(/ /g,'_').replace(/[:-]/g,"").replace(/\//g,"").replace(/__/g,"_");
 
     let l = document.getElementById('links');
 
