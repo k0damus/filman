@@ -25,7 +25,7 @@ if (result) {
 
     // tytul serialu
     let s = document.querySelectorAll('h2')
-    let seriesTitle = s[1].innerText.replace(/ /g,'_').replace(/[:-]/g,"").replace(/\//g,"").replace(/__/g,"_");
+    let seriesTitle = s[1].innerText.replace(/ /g,'_').replace(/[:-]/g,"").replace(/\//g,"").replace(/__/g,"_").replace(/_Sezon.*$/, '');
 
     // tytul + oznaczenie odcina
     let t = document.querySelectorAll('h3');
@@ -39,11 +39,7 @@ if (result) {
     // obrobka
     for (let i = 0; i < l.getElementsByTagName('tbody')[0].childElementCount; i++){
         let vodLink = l.getElementsByTagName('tbody')[0].children[i].getElementsByTagName('td')[1].querySelector('a').getAttribute('href');
-        let mediaType = l.getElementsByTagName('tbody')[0].children[i].getElementsByTagName('td')[2].innerText.replace(/Napisy PL|Polski/g, match => {
-            if (match === 'Napisy PL') return 'Napisy';
-            if (match === 'Polski') return 'PL';
-            return match;
-            });
+        let mediaType = l.getElementsByTagName('tbody')[0].children[i].getElementsByTagName('td')[2].innerText.replace(/Napisy PL/g,'Napisy');
         allData.push(vodLink+"@"+mediaType+"@"+videoType+"@"+seriesTitle+"@"+episodeTitleFormatted);
     }
 
@@ -51,17 +47,13 @@ if (result) {
     videoType = 'Film';
 
     let t = document.querySelectorAll('h2')
-    let movieTitle = t[1].childNodes[0].textContent.replace(/ /g,'_').replace(/[:-]/g,"").replace(/\//g,"").replace(/__/g,"_");
+    let movieTitle = t[1].innerText.replace(/ /g,'_').replace(/[:-]/g,"").replace(/\//g,"").replace(/__/g,"_");
 
     let l = document.getElementById('link-list');
 
     for (let i = 0; i < l.getElementsByTagName('tbody')[0].childElementCount; i++){
         let vodLink = l.getElementsByTagName('tbody')[0].children[i].getElementsByTagName('td')[1].querySelector('a').getAttribute('href');
-        let mediaType = l.getElementsByTagName('tbody')[0].children[i].getElementsByTagName('td')[2].innerText.replace(/Napisy PL|Polski/g, match => {
-            if (match === 'Napisy PL') return 'Napisy';
-            if (match === 'Polski') return 'PL';
-            return match;
-            });
+        let mediaType = l.getElementsByTagName('tbody')[0].children[i].getElementsByTagName('td')[2].innerText.replace(/Napisy PL/g,'Napisy');
         allData.push(vodLink+"@"+mediaType+"@"+videoType+"@"+movieTitle);
     }
 }
