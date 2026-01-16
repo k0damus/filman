@@ -30,7 +30,7 @@ if (result) {
     // tytul + oznaczenie odcina
     let t = document.querySelectorAll('h3');
     let episodeTitleTemp = t[0].innerText.replace(/ /g,"_").replace(/\[|\]/g,"");
-    let parts = episodeTitleTemp.match(/(s\d{2})(e\d{2})_(.*)/);
+    let parts = episodeTitleTemp.match(/(s\d{2})(e\d{2,})_(.*)/);
     let episodeTitleFormatted = `_${parts[1]}_${parts[2]}@${parts[3]}`;
 
     // linki i typ filmu (lektor/napisy/etc)
