@@ -12,8 +12,8 @@ search_list=$(printf "%s|" "${search[@]}" | sed 's/|$//')
 
 
 #Wyedytuj linię poniżej według własnych potrzeb 
-outDir=TU-WPISZ-SWOJĄ-ŚCIEŻKĘ-DO-ZAPISU-POBRANYCH-VIDEO
-fTmp=TU-WPISZ-SWOJĄ-ŚCIEŻKĘ-DO-OBRÓBKI-PLIKÓW-TYMCZASOWYCH
+outDir="${HOME}"/minidlna/torrent/complete
+fTmp='/tmp/filman'
 mType=''
 reqCheck=()
 
@@ -65,7 +65,7 @@ cleanup() {
 	exit 1
 }
 
-trap "cleanup" SIGINT SIGTERM
+# trap "cleanup" SIGINT SIGTERM
 
 #Tworzmy katalog tymczasowy do ściągania części filmu / odcinka serialu
 make_dir(){
@@ -124,6 +124,8 @@ getVideo(){
     	echo "Pobieram część ${part} z '"${ilosc}"'"
 		if [ "${vod}" == "vidmoly" ]; then
       		curl -sL -H "User-Agent: Mozilla/5.0" -H "Referer: https://vidmoly.to/" "${url}" -o "${outfile}"
+		elif [ "${vod}" == "lulustream" ]; then
+	  		curl -sL -H "Referer: https://luluvdo.com/" "${url}" -o "${outfile}"
 	  	else
 	  		curl -sL "${url}" -o "${outfile}"
 	  	fi
@@ -225,7 +227,7 @@ for file in "${path}"*; do
 					getVideo
 					saveVideo
 				fi
-				rm -rf "${tmpDir}"
+				# rm -rf "${tmpDir}"
 			fi
 		fi
 
@@ -233,4 +235,4 @@ for file in "${path}"*; do
 
 done
 
-rm -rf "${fTmp}" >/dev/null 2>&1
+# rm -rf "${fTmp}" >/dev/null 2>&1
