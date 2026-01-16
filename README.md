@@ -21,7 +21,7 @@ Pobieranie filmów działa 2 etapowo:
 - modyfikujemy odpowiednie linijki w skrypcie **ripvid.sh**, które odpowiadają za ścieżki do obsługi plików tymczasowych oraz plików wyjściowych:
   ```
   outDir=TU-WPISZ-SWOJĄ-ŚCIEŻKĘ-DO-ZAPISU-POBRANYCH-VIDEO
-  fTmp=TU-WPISZ-SWOJĄ-ŚCIEŻKĘ-DO-OBRÓWKI-PLIKÓW-TYMCZASOWYCH
+  fTmp=TU-WPISZ-SWOJĄ-ŚCIEŻKĘ-DO-OBRÓBKI-PLIKÓW-TYMCZASOWYCH
   ```
 - nadajemy prawo wykonywania do skryptu **ripvid.sh**
 - uruchamiamy skrypt w następujący sposób

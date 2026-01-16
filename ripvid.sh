@@ -13,7 +13,7 @@ search_list=$(printf "%s|" "${search[@]}" | sed 's/|$//')
 
 #Wyedytuj linię poniżej według własnych potrzeb 
 outDir=TU-WPISZ-SWOJĄ-ŚCIEŻKĘ-DO-ZAPISU-POBRANYCH-VIDEO
-fTmp=TU-WPISZ-SWOJĄ-ŚCIEŻKĘ-DO-OBRÓWKI-PLIKÓW-TYMCZASOWYCH
+fTmp=TU-WPISZ-SWOJĄ-ŚCIEŻKĘ-DO-OBRÓBKI-PLIKÓW-TYMCZASOWYCH
 mType=''
 reqCheck=()
 
