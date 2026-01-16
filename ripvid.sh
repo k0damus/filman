@@ -1,7 +1,19 @@
 #!/usr/bin/env bash
+search=()
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+for file in "${SCRIPT_DIR}"/lib/*.sh; do
+	[[ -f "${file}" ]] && source "${file}"
+	search+=($( basename "${file}" .sh ))
+done
+#search_list - do użycia w grepie jako wyrażenie regularne w funkcji vodCheck
+search_list=$(printf "%s|" "${search[@]}" | sed 's/|$//')
+
+
 #Wyedytuj linię poniżej według własnych potrzeb 
-outDir="${HOME}"/minidlna/torrent/complete
-fTmp='/tmp/filman'
+outDir=TU-WPISZ-SWOJĄ-ŚCIEŻKĘ-DO-ZAPISU-POBRANYCH-VIDEO
+fTmp=TU-WPISZ-SWOJĄ-ŚCIEŻKĘ-DO-OBRÓWKI-PLIKÓW-TYMCZASOWYCH
 mType=''
 reqCheck=()
 
@@ -55,8 +67,6 @@ cleanup() {
 
 trap "cleanup" SIGINT SIGTERM
 
-#FUNKCJE
-
 #Tworzmy katalog tymczasowy do ściągania części filmu / odcinka serialu
 make_dir(){
 	mkdir -p "${fTmp}"/"${1}"_temp
@@ -71,8 +81,7 @@ vodCheck(){
 	lines=()
 	for m in "${movies[@]}"; do
 		#tu tworzymy tablicę z wszystkimi wynikami pasującymi do: nazwa serialu + typ video + szukany vod
-		#testLine=($( grep "${m}" "${file}" | grep "${mediaType}" | grep -E "lulu|vidmoly|streamtape|savefiles|vidoza" )) #| head -n 1 ))
-		testLine=($( grep "${m}" "${file}" | grep "${mediaType}" | grep -E "vidmoly|lulu|savefiles" )) #| head -n 1 ))
+		testLine=($( grep "${m}" "${file}" | grep "${mediaType}" | grep -E \"${search_list}\" ))
 		#tutaj iterujemy po całej tablicy i wykonujemy wstępne sprawdzenie czy video wogóle istnieje na tym vod czy nie zostało usunięte
 		if [ "${testLine}" ]; then
 			for line in "${testLine[@]}"; do
@@ -96,134 +105,9 @@ vodCheck(){
 			echo "${versions[@]}"
 		fi
 	done
-}
 
-#Obsługa pobierania z różnych VOD (napierw TEST później funkcja wybierająca właściwe pliki)
-streamtapeTest(){
-	dataCheck=$(curl -sL "${1}" --max-time 5)
-	if [[ -z "${dataCheck}" || "${dataCheck}" == *"Video not found"* ]]; then
-		isOK=false
-	else
-		isOK=true
-	fi
-}
-
-streamtape(){
-	if [[ "${1}" != *"/e/"* ]]; then
-		link=$( echo "${1}" | sed 's/com\/v\//com\/e\//')
-	fi
-
-	videoID=$( echo "${link}" | cut -d '/' -f5 )
-	videoURL=$( curl -sL "${link}" | grep "'botlink'" | sed -n "s/.*\(\&expires.*\)'.*/\1/p" | sed "s/^/https:\/\/streamtape.com\/get_video?id=${videoID}/;s/$/\&stream=1/" )
-	curlOpts=''
-
-	if [ "${seriesTitle}" ] && [ "${seasonNumber}" ] && [ "${episodeTitle}" ]; then
-		curl -L "${videoURL}" -o "${outDir}"/"${seriesTitle}"/"${seasonNumber}"/"${fullEpisodeTitle}".mp4
-		echo "Film zapisany w ${outDir}/${seriesTitle}/${seasonNumber}/${fullEpisodeTitle}.mp4"
-	else
-		[ ! -d "${outDir}"/"${title}" ] && mkdir -p "${outDir}"/"${title}"
-		curl -L "${videoURL}" -o "${outDir}"/"${title}"/"${title}".mp4
-		echo "Film zapisany w ${outDir}/${title}/${title}.mp4"
-	fi
-}
-
-vidozaTest(){
-	dataCheck=$(curl -sL "${1}" --max-time 5)
-	if [[ -z "${dataCheck}" || "${dataCheck}" == *"File was deleted"* ]]; then
-		isOK=false
-	else
-		isOK=true
-	fi
-}
-
-vidoza(){
-	curlOpts=''
-	videoURL=$( curl -sL "${1}" | grep sourcesCode | cut -d '"' -f2 )
-
-	if [ "${seriesTitle}" ] && [ "${seasonNumber}" ] && [ "${episodeTitle}" ]; then
-		curl "${videoURL}" -o "${outDir}"/"${seriesTitle}"/"${seasonNumber}"/"${fullEpisodeTitle}".mp4
-		echo "Film zapisany w ${outDir}/${seriesTitle}/${seasonNumber}/${fullEpisodeTitle}.mp4"
-	else
-		[ ! -d "${outDir}"/"${title}" ] && mkdir -p "${outDir}"/"${title}"
-		curl "${videoURL}" -o "${outDir}"/"${title}"/"${title}".mp4
-		echo "Film zapisany w ${outDir}/${title}/${title}.mp4"
-	fi
-}
-
-vidmolyTest(){
-	dataCheck=$(curl -sL "${1}" --max-time 5 -H "User-Agent: Mozilla/5.0" -H "Referer: https://vidmoly.to/")
-	if [[ -z "${dataCheck}" || "${dataCheck}" == *"notice.php"* ]]; then
-		isOK=false
-	else
-		isOK=true
-	fi	
-}
-
-vidmoly(){
-	if [[ "${1}" != *"embed"* ]]; then
-		link=$( echo "${1}" | sed -n 's/\(https.*\)\(.me\/w\/\)\(.*\)$/\1.to\/embed-\3.html/p')
-	fi
-
-	curlOpts=("-H" "User-Agent: Mozilla/5.0" "-H" "Referer: https://vidmoly.to/")
-	fullURL=$( wget "${link}" -qO- | grep sources: | cut -d '"' -f2 )
-	mainURL=$( echo "${fullURL}" |  tr -d ',' | sed -n 's/\(^.*\)\.urlset.*/\1/p' )
-	partsPATH=$( curl -sL "${fullURL}" "${curlOpts[@]}" | grep index | head -n1 )
-	curl -sL "${partsPATH}" "${curlOpts[@]}" | grep -v ^# > "${partsList}"
-}
-
-lulustreamTest(){
-	dataCheck=$(curl -sL "${1}" --max-time 5 -H "User-Agent: Mozilla/5.0")
-	if [[ -z "${dataCheck}" || "${dataCheck}" == *"been deleted"* ]]; then
-		isOK=false
-	else
-		isOK=true
-	fi		
-}
-
-lulustream(){
-	if grep -q sources < <( curl -sL "${1}" ); then 
-		link=$( curl -sL "${1}" | grep sources | cut -d '"' -f2  )
-		mainURL=$( echo "${link}" | sed -n 's/\(^.*\)\/master.*$/\1/p' )
-		partsPATH=$( curl -sL "${link}" | grep index )
-		curl -sL "${partsPATH}" | grep -v ^# > "${partsList}"
-		#patrzymy czy potrzebny jest klucz szyfrujący
-		response=$(curl -sL "${partsPATH}")
-		if echo "${response}" | grep -q "enc"; then
-			key_url=$(echo "${response}" | grep enc | cut -d '"' -f2)
-			curl -sL "${key_url}" -o "${tmpDir}/encryption.key"
-		fi
-
-	else
-		echo "Nie mogę znaleźć linku do źródeł."
-	fi
-}
-
-lulustreamDecrypt(){
-	for f in "${tmpDir}"/*.ts; do
-		NUM=$(echo "${f}" | grep -oP '\d+(?=\.ts)'  | tr -d '0' )
-		NAME=${f##*/}
-		IV=$(printf "%032x" "$NUM")
-		echo "Odszyfrowywanie ${f}."
-		openssl aes-128-cbc -d -in "${f}" -out "${tmpDir}"/dec-"${NAME}" -nosalt -iv "${IV}" -K "$(xxd -p "${tmpDir}"/encryption.key | tr -d '\n')"
-		#Po zdekodowaniu nadpisujemy oryginał
-		mv "${tmpDir}"/dec-"${NAME}" "${f}"
-	done
-}
-
-savefilesTest(){
-	dataCheck=$( curl -sL "https://savefiles.com/dl?op=embed&file_code=${1##*/}&auto=1" -H "Referer: ${1}"  )
-	if [[ -z "${dataCheck}" || "${dataCheck}" == *"been deleted"* ]]; then
-		isOK=false
-	else
-		isOK=true
-	fi	
-}
-
-savefiles(){
-	partsPATH=$( curl -sL "https://savefiles.com/dl?op=embed&file_code=${1##*/}&auto=1" -H "Referer: ${1}" | grep hls | sed -n 's/^.*\(https.*\)"}].*$/\1/p' )
-	partsLINK=$( curl -sL "${partsPATH}" | grep index )
-	mainURL="${partsLINK%/*}"
-	curl -sL "${partsLINK}" | grep -v ^# > "${partsList}"
+	#sortujemy wynik
+	lines=($( printf "%s\n" "${lines[@]}" | sort -u | tr '\n' ' '))
 }
 
 #Obsługa pobrania fragmentów filmu
@@ -235,7 +119,7 @@ getVideo(){
     <"${partsList}" xargs -n3 -P50 bash -c '
     	url="${1}"
     	outfile="${2}"
-			vod="${3}"
+		vod="${3}"
     	part=$(basename "${outfile}" .ts)
     	echo "Pobieram część ${part} z '"${ilosc}"'"
 		if [ "${vod}" == "vidmoly" ]; then
@@ -301,7 +185,7 @@ for file in "${path}"*; do
 				make_dir "${title}"
 				mkdir -p "${outDir}/${title}"
 				echo "Pobieram ${title} z ${myVod}..."
-				if [[ "${myVod}" == 'vidoza' || "${myVod}" == 'streamtape' ]] ; then
+				if [[ "${myVod}" == 'vidoza' || "${myVod}" == 'streamtape' || "${myVod}" == 'bigshare' ]] ; then
 					"${myVod}" "${link}"
 				else
 					"${myVod}" "${link}"
@@ -313,7 +197,7 @@ for file in "${path}"*; do
 			fi
 
 		else			
-			pattern='^([a-z]*)@(.*)@.*@Serial@(.*)@_(s[0-9]{2})_(e[0-9]{2})@(.*$)'
+			pattern='^([a-z]*)@(.*)@.*@Serial@(.*)@_(s[0-9]{2})_(e[0-9]{2,})@(.*$)'
 			if [[ "${dataLine}" =~ $pattern ]]; then
 				myVod="${BASH_REMATCH[1]}"
 				link="${BASH_REMATCH[2]}"
@@ -332,7 +216,7 @@ for file in "${path}"*; do
 				make_dir "${episodeTitle}"
 				mkdir -p "${outDir}/${seriesTitle}/${seasonNumber}"
 				echo "Pobieram ${seriesTitle} - ${episodeTitle} z ${myVod}..."
-				if [[ "${myVod}" == 'vidoza' || "${myVod}" == 'streamtape' ]] ; then
+				if [[ "${myVod}" == 'vidoza' || "${myVod}" == 'streamtape' || "${myVod}" == 'bigshare' ]] ; then
 					"${myVod}" "${link}"
 				else
 					"${myVod}" "${link}"
