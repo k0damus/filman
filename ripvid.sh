@@ -9,9 +9,13 @@ for file in "${SCRIPT_DIR}"/lib/*.sh; do
 done
 #search_list - do użycia w grepie jako wyrażenie regularne w funkcji vodCheck
 search_list=$(printf "%s|" "${search[@]}" | sed 's/|$//')
+vod_regex=$(IFS='|'; echo "${search_list[*]}")
 
 
 #Wyedytuj linię poniżej według własnych potrzeb 
+#outDir=TU-WPISZ-SWOJĄ-ŚCIEŻKĘ-DO-ZAPISU-POBRANYCH-VIDEO
+#fTmp=TU-WPISZ-SWOJĄ-ŚCIEŻKĘ-DO-OBRÓBKI-PLIKÓW-TYMCZASOWYCH
+
 outDir="${HOME}"/minidlna/torrent/complete
 fTmp='/tmp/filman'
 mType=''
@@ -81,7 +85,7 @@ vodCheck(){
 	lines=()
 	for m in "${movies[@]}"; do
 		#tu tworzymy tablicę z wszystkimi wynikami pasującymi do: nazwa serialu + typ video + szukany vod
-		testLine=($( grep "${m}" "${file}" | grep "${mediaType}" | grep -E \"${search_list}\" ))
+		testLine=($( grep "${m}" "${file}" | grep "${mediaType}" | grep -E "${vod_regex}" ))
 		#tutaj iterujemy po całej tablicy i wykonujemy wstępne sprawdzenie czy video wogóle istnieje na tym vod czy nie zostało usunięte
 		if [ "${testLine}" ]; then
 			for line in "${testLine[@]}"; do
@@ -109,6 +113,8 @@ vodCheck(){
 	#sortujemy wynik
 	lines=($( printf "%s\n" "${lines[@]}" | sort -u | tr '\n' ' '))
 }
+
+
 
 #Obsługa pobrania fragmentów filmu
 getVideo(){
@@ -227,7 +233,7 @@ for file in "${path}"*; do
 					getVideo
 					saveVideo
 				fi
-				# rm -rf "${tmpDir}"
+				rm -rf "${tmpDir}"
 			fi
 		fi
 
@@ -235,4 +241,4 @@ for file in "${path}"*; do
 
 done
 
-# rm -rf "${fTmp}" >/dev/null 2>&1
+rm -rf "${fTmp}" >/dev/null 2>&1
