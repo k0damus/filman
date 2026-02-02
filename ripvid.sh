@@ -1,6 +1,30 @@
 #!/usr/bin/env bash
-search=()
 
+usage() {
+local prog="${0##*/}"
+cat <<-EOF
+
+Użycie: ${prog} -p <ścieżka_do_folderu> [-t <typ>]
+Opcje:
+  -p <ścieżka>  (wymagane) ścieżka do folderu z plikiem z linkami
+  -t <typ>      (opcjonalne) typ video. Jeżeli opcja zostanie pominięta to domyślnie wybrana zostanie wersja z lektorem.
+                Dostępne opcje: 
+                - n/N - napisy
+                - p/P - polski
+                - d/D - dubbing
+                - e/E - angielski
+                - l/L - lektor
+
+Przykład:
+  ${prog} -p /tmp/mydata -t l
+
+Info: wymagane do poprawnego działania: cURL, openssl, perl. Perl jest opcjonalny, choć przyspiesza pewne działania ;)
+
+EOF
+}
+
+#Załaczanie bibliotek do obsługi VOD
+search=()
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 for file in "${SCRIPT_DIR}"/lib/*.sh; do
@@ -11,16 +35,17 @@ done
 search_list=$(printf "%s|" "${search[@]}" | sed 's/|$//')
 vod_regex=$(IFS='|'; echo "${search_list[*]}")
 
-
 #Wyedytuj linię poniżej według własnych potrzeb 
 #out_dir=TU-WPISZ-SWOJĄ-ŚCIEŻKĘ-DO-ZAPISU-POBRANYCH-VIDEO
 #filman_dir=TU-WPISZ-SWOJĄ-ŚCIEŻKĘ-DO-OBRÓBKI-PLIKÓW-TYMCZASOWYCH
 
+#Zmienne gówne
 out_dir="${HOME}"/minidlna/torrent/complete
 filman_dir='/tmp/filman'
 user_media_type=''
 req_check=()
 
+#Początkowe sprawdzanie
 req=('/usr/bin/curl' '/usr/bin/openssl')
 
 for r in "${req[@]}"; do
@@ -28,7 +53,7 @@ for r in "${req[@]}"; do
 done
 
 if [[ "${#req_check[@]}" -gt 0 ]]; then
-	echo "Brak tych programów: ${req_check[*]} Zainstaluj."
+	echo "Brak tych programów: ${req_check[*]} Zainstaluj aby móc kontynuować."
 	exit 1
 fi
 
@@ -41,14 +66,19 @@ while getopts ":p:t:" opt; do
 	case "${opt}" in
 		p) path="${OPTARG}" ;;
 		t) user_media_type="${OPTARG}" ;;
-		:) echo "Opcja -${OPTARG} wymaga argumentu." ; exit 1 ;;
-		?) echo "Niewłaściwa opcja: -${OPTARG}." ; exit 1 ;;
+		:) echo "Opcja -${OPTARG} wymaga argumentu." ; usage ; exit 1 ;;
+		?) echo "Niewłaściwa opcja: -${OPTARG}." ; usage ; exit 1 ;;
 	esac
 done
 
+if (( OPTIND <= $# )); then
+    echo "Za dużo argumentów."
+	usage
+    exit 1
+fi
+
 if [[ -z "${path}" ]] ; then
-	echo "Brak / za malo danych."
-	echo "Użycie: ./ripvid.sh -p <sciezka_do_katalogu_z_plikiem/plikami>"
+	usage
 	exit 1
 fi
 
@@ -60,7 +90,7 @@ case "${user_media_type}" in
 	*)   echo "Wybrano opcję: Lektor." && media_type='Lektor' ;;
 esac
 
-#Na początek: łapiemy CTRL + C i usuwamy nasz katalog w razie czego
+#Na początek: łapiemy CTRL + C i usuwamy nasz katalog $filman_dir w razie czego
 cleanup() {
 	echo
 	echo "Sprzątamy..."
@@ -69,7 +99,7 @@ cleanup() {
 	exit 1
 }
 
-# trap "cleanup" SIGINT SIGTERM
+trap "cleanup" SIGINT SIGTERM
 
 #Tworzmy katalog tymczasowy do ściągania części filmu / odcinka serialu
 make_dir(){
@@ -120,15 +150,15 @@ vodCheck(){
 #Obsługa pobrania fragmentów filmu
 getVideo(){
   if [ -s "${parts_list}" ]; then
-    ilosc=$(wc -l < "${parts_list}")
-    echo "Do pobrania ${ilosc} części."
+    count=$(wc -l < "${parts_list}")
+    echo "Do pobrania ${count} części."
 
     <"${parts_list}" xargs -n3 -P50 bash -c '
     	url="${1}"
     	outfile="${2}"
 		vod="${3}"
     	part=$(basename "${outfile}" .ts)
-    	echo "Pobieram część ${part} z '"${ilosc}"'"
+    	echo "Pobieram część ${part} z '"${count}"'"
 		if [ "${vod}" == "vidmoly" ]; then
       		curl -sL -H "User-Agent: Mozilla/5.0" -H "Referer: https://vidmoly.to/" "${url}" -o "${outfile}"
 		elif [ "${vod}" == "lulustream" ]; then
