@@ -13,34 +13,34 @@ vod_regex=$(IFS='|'; echo "${search_list[*]}")
 
 
 #Wyedytuj linię poniżej według własnych potrzeb 
-#outDir=TU-WPISZ-SWOJĄ-ŚCIEŻKĘ-DO-ZAPISU-POBRANYCH-VIDEO
-#fTmp=TU-WPISZ-SWOJĄ-ŚCIEŻKĘ-DO-OBRÓBKI-PLIKÓW-TYMCZASOWYCH
+#out_dir=TU-WPISZ-SWOJĄ-ŚCIEŻKĘ-DO-ZAPISU-POBRANYCH-VIDEO
+#filman_dir=TU-WPISZ-SWOJĄ-ŚCIEŻKĘ-DO-OBRÓBKI-PLIKÓW-TYMCZASOWYCH
 
-outDir="${HOME}"/minidlna/torrent/complete
-fTmp='/tmp/filman'
-mType=''
-reqCheck=()
+out_dir="${HOME}"/minidlna/torrent/complete
+filman_dir='/tmp/filman'
+user_media_type=''
+req_check=()
 
 req=('/usr/bin/curl' '/usr/bin/openssl')
 
 for r in "${req[@]}"; do
-	[[ ! -f "${r}" ]] && reqCheck+=("${r}");
+	[[ ! -f "${r}" ]] && req_check+=("${r}");
 done
 
-if [[ "${#reqCheck[@]}" -gt 0 ]]; then
-	echo "Brak tych programów: ${reqCheck[*]} Zainstaluj."
+if [[ "${#req_check[@]}" -gt 0 ]]; then
+	echo "Brak tych programów: ${req_check[*]} Zainstaluj."
 	exit 1
 fi
 
-if [[ ! -d "${outDir}" ]]; then
-	echo "Katalog ${outDir} nie istnieje!"
+if [[ ! -d "${out_dir}" ]]; then
+	echo "Katalog ${out_dir} nie istnieje!"
 	exit 1
 fi
 
 while getopts ":p:t:" opt; do
 	case "${opt}" in
 		p) path="${OPTARG}" ;;
-		t) mType="${OPTARG}" ;;
+		t) user_media_type="${OPTARG}" ;;
 		:) echo "Opcja -${OPTARG} wymaga argumentu." ; exit 1 ;;
 		?) echo "Niewłaściwa opcja: -${OPTARG}." ; exit 1 ;;
 	esac
@@ -52,19 +52,19 @@ if [[ -z "${path}" ]] ; then
 	exit 1
 fi
 
-case "${mType}" in
-	n|N) echo "Wybrano opcję: Napisy." && mediaType='Napisy' ;;
-	p|P) echo "Wybrano opcję: PL." && mediaType='PL' ;;
-	d|D) echo "Wybrano opcję: Dubbing." && mediaType='Dubbing' ;;
-	e|E) echo "Wybrano opcję: ENG." && mediaType='ENG' ;;
-	*)   echo "Wybrano opcję: Lektor." && mediaType='Lektor' ;;
+case "${user_media_type}" in
+	n|N) echo "Wybrano opcję: Napisy." && media_type='Napisy' ;;
+	p|P) echo "Wybrano opcję: PL." && media_type='PL' ;;
+	d|D) echo "Wybrano opcję: Dubbing." && media_type='Dubbing' ;;
+	e|E) echo "Wybrano opcję: ENG." && media_type='ENG' ;;
+	*)   echo "Wybrano opcję: Lektor." && media_type='Lektor' ;;
 esac
 
 #Na początek: łapiemy CTRL + C i usuwamy nasz katalog w razie czego
 cleanup() {
 	echo
 	echo "Sprzątamy..."
-	rm -rf "${fTmp}"
+	rm -rf "${filman_dir}"
 	echo
 	exit 1
 }
@@ -73,37 +73,38 @@ cleanup() {
 
 #Tworzmy katalog tymczasowy do ściągania części filmu / odcinka serialu
 make_dir(){
-	mkdir -p "${fTmp}"/"${1}"_temp
-	tmpDir="${fTmp}/${1}_temp"
-	touch "${tmpDir}"/parts.txt
-	partsList="${tmpDir}"/parts.txt
+	mkdir -p "${filman_dir}"/"${1}"_temp
+	tmp_dir="${filman_dir}/${1}_temp"
+	touch "${tmp_dir}"/parts.txt
+	parts_list="${tmp_dir}"/parts.txt
 }
 
 #Sprawdzamy z którego serwisu możemy pobrać dany film, tzn. czy w ogóle są dostępne linki.
 vodCheck(){
+	local movies
 	movies=($(cut -d '@' -f 3-  < "${file}" | sort -u  ))
 	lines=()
 	for m in "${movies[@]}"; do
 		#tu tworzymy tablicę z wszystkimi wynikami pasującymi do: nazwa serialu + typ video + szukany vod
-		testLine=($( grep "${m}" "${file}" | grep "${mediaType}" | grep -E "${vod_regex}" ))
+		test_line=($( grep "${m}" "${file}" | grep "${media_type}" | grep -E "${vod_regex}" ))
 		#tutaj iterujemy po całej tablicy i wykonujemy wstępne sprawdzenie czy video wogóle istnieje na tym vod czy nie zostało usunięte
-		if [[ "${testLine}" ]]; then
-			for line in "${testLine[@]}"; do
-				testVod=$( echo "${line}" | sed -n 's/^.*\/\/\([^.]*\)\..*$/\1/p' )
+		if [[ "${test_line}" ]]; then
+			for line in "${test_line[@]}"; do
+				test_vod=$( echo "${line}" | sed -n 's/^.*\/\/\([^.]*\)\..*$/\1/p' )
 				#lulu może być "lulu" ablo "luluvdo", więc zmieniamy
-				[[ "${testVod}" =~ lulu ]] && testVod='lulustream'
-				testLink=$( echo "${line}" | cut -d "@" -f1 )
+				[[ "${test_vod}" =~ lulu ]] && test_vod='lulustream'
+				test_link=$( echo "${line}" | cut -d "@" -f1 )
 				#testujemy
-				echo "Sprawdzam: ${testLink}"
-				"${testVod}"Test "${testLink}"
+				echo "Sprawdzam: ${test_link}"
+				"${test_vod}"Test "${test_link}"
 				#Jeśli nie mamy błędu to dopisujemy do ostatecznej tablicy lines()
-				if [[ "${isOK}" = true ]]; then
-					line="${testVod}@${line}"
+				if [[ "${is_ok}" = true ]]; then
+					line="${test_vod}@${line}"
 					lines+=( "${line}" )
 				fi
 			done
 		else
-			echo "Brak źródeł dla tego filmu dla wybranej wersji: ${mediaType}"
+			echo "Brak źródeł dla tego filmu dla wybranej wersji: ${media_type}"
 			echo "Dostępne możliwości do wyboru to: "
 			versions=($( awk -F'@' '{ print $2 }' "${1}" | sort -u ))
 			echo "${versions[@]}"
@@ -118,11 +119,11 @@ vodCheck(){
 
 #Obsługa pobrania fragmentów filmu
 getVideo(){
-  if [ -s "${partsList}" ]; then
-    ilosc=$(wc -l < "${partsList}")
+  if [ -s "${parts_list}" ]; then
+    ilosc=$(wc -l < "${parts_list}")
     echo "Do pobrania ${ilosc} części."
 
-    <"${partsList}" xargs -n3 -P50 bash -c '
+    <"${parts_list}" xargs -n3 -P50 bash -c '
     	url="${1}"
     	outfile="${2}"
 		vod="${3}"
@@ -137,27 +138,27 @@ getVideo(){
 	  	fi
 	  	' _
 
-		if [ -f "${tmpDir}"/encryption.key ]; then
+		if [ -f "${tmp_dir}"/encryption.key ]; then
 			lulustreamDecrypt
 		fi
 
 	else
-		echo "Plik ${partsList} wygląda na pusty!"
+		echo "Plik ${parts_list} wygląda na pusty!"
 	fi
 }
 
 #Zapis do odpowiednich katalogów z podziałem na film/serial
 saveVideo(){
-	if ls "${tmpDir}"/*.ts >/dev/null 2>&1; then
-		if [[ -z "${seriesCheck}" ]]; then
-			cat $(ls "${tmpDir}"/*.ts) > "${outDir}"/"${title}"/"${title}".ts 
-			echo "Film zapisany w ${outDir}/${title}/${title}.ts"
+	if ls "${tmp_dir}"/*.ts >/dev/null 2>&1; then
+		if [[ -z "${series_check}" ]]; then
+			cat $(ls "${tmp_dir}"/*.ts) > "${out_dir}"/"${title}"/"${title}".ts 
+			echo "Film zapisany w ${out_dir}/${title}/${title}.ts"
 		else
-	    	cat "${tmpDir}"/*.ts > "${outDir}/${seriesTitle}/${seasonNumber}/${fullEpisodeTitle}.ts"
-    		echo "Film zapisany w ${outDir}/${seriesTitle}/${seasonNumber}/${fullEpisodeTitle}.ts"
+	    	cat "${tmp_dir}"/*.ts > "${out_dir}/${series_title}/${season_number}/${full_episode_title}.ts"
+    		echo "Film zapisany w ${out_dir}/${series_title}/${season_number}/${full_episode_title}.ts"
 		fi
 	else
-		echo "Brak plików *.ts w ${tmpDir}"
+		echo "Brak plików *.ts w ${tmp_dir}"
 	fi
 
 }
@@ -165,7 +166,7 @@ saveVideo(){
 #CZĘŚĆ GŁÓWNA
 #####################################################
 #Tutaj zaczynamy imprezę robiąc porządki jeśli trzeba
-rm -rf "${fTmp}" >/dev/null 2>&1 && mkdir -p "${fTmp}"
+rm -rf "${filman_dir}" >/dev/null 2>&1 && mkdir -p "${filman_dir}"
 
 for file in "${path}"*; do
 
@@ -173,32 +174,32 @@ for file in "${path}"*; do
 
 	vodCheck "${file}"
 
-	for dataLine in "${lines[@]}"; do
+	for data_line in "${lines[@]}"; do
 
-		seriesCheck=$( grep 'Serial' <<< "${dataLine}" )
+		series_check=$( grep 'Serial' <<< "${data_line}" )
 
-		if [[ -z "${seriesCheck}" ]]; then
+		if [[ -z "${series_check}" ]]; then
 			pattern='^([a-z]*)@([^@]*)@.*@(.*)'
-			if [[ "${dataLine}" =~ $pattern ]]; then
-				myVod="${BASH_REMATCH[1]}"
+			if [[ "${data_line}" =~ $pattern ]]; then
+				my_vod="${BASH_REMATCH[1]}"
 				link="${BASH_REMATCH[2]}"
 				title="${BASH_REMATCH[3]}"
 			fi
 
-			isThere=$( ls "${outDir}/${title}/${title}".* 2>/dev/null )
+			is_there=$( ls "${out_dir}/${title}/${title}".* 2>/dev/null )
 
-			if [[ "${isThere}" ]]; then
-				echo "Plik ${isThere##*/} już istnieje: ${isThere}"
+			if [[ "${is_there}" ]]; then
+				echo "Plik ${is_there##*/} już istnieje: ${is_there}"
 			else
 				make_dir "${title}"
-				mkdir -p "${outDir}/${title}"
-				echo "Pobieram ${title} z ${myVod}..."
-				if [[ "${myVod}" == 'vidoza' || "${myVod}" == 'streamtape' || "${myVod}" == 'bigshare' ]] ; then
-					"${myVod}" "${link}"
+				mkdir -p "${out_dir}/${title}"
+				echo "Pobieram ${title} z ${my_vod}..."
+				if [[ "${my_vod}" == 'vidoza' || "${my_vod}" == 'streamtape' ]] ; then
+					"${my_vod}" "${link}"
 				else
-					"${myVod}" "${link}"
+					"${my_vod}" "${link}"
 					#Taka mała magia, żeby mieć fajne dane wejściowe do xargs
-					awk -v dir="${tmpDir}" -v vod="${myVod}" '{printf "%s %s/%03d.ts %s\n", $0, dir, NR, vod}' "${partsList}" > "${partsList}.tmp" && mv -f "${partsList}.tmp" "${partsList}"
+					awk -v dir="${tmp_dir}" -v vod="${my_vod}" '{printf "%s %s/%03d.ts %s\n", $0, dir, NR, vod}' "${parts_list}" > "${parts_list}.tmp" && mv -f "${parts_list}.tmp" "${parts_list}"
 					getVideo
 					saveVideo
 				fi
@@ -206,34 +207,34 @@ for file in "${path}"*; do
 
 		else			
 			pattern='^([a-z]*)@(.*)@.*@Serial@(.*)@_(s[0-9]{2})_(e[0-9]{2,})@(.*$)'
-			if [[ "${dataLine}" =~ $pattern ]]; then
-				myVod="${BASH_REMATCH[1]}"
+			if [[ "${data_line}" =~ $pattern ]]; then
+				my_vod="${BASH_REMATCH[1]}"
 				link="${BASH_REMATCH[2]}"
-				seriesTitle="${BASH_REMATCH[3]}"
-				seasonNumber="${BASH_REMATCH[4]}"
-				episodeNumber="${BASH_REMATCH[5]}"
-				episodeTitle="${BASH_REMATCH[6]}"
-				fullEpisodeTitle="["$seasonNumber$episodeNumber"]_"$episodeTitle
+				series_title="${BASH_REMATCH[3]}"
+				season_number="${BASH_REMATCH[4]}"
+				episode_number="${BASH_REMATCH[5]}"
+				episode_title="${BASH_REMATCH[6]}"
+				full_episode_title="[$season_number$episode_number]_$episode_title"
 			fi
 
-			isThere=$( ls "${outDir}/${seriesTitle}/${seasonNumber}/${fullEpisodeTitle}".* 2>/dev/null )
+			is_there=$( ls "${out_dir}/${series_title}/${season_number}/${full_episode_title}".* 2>/dev/null )
 
-			if [[ "${isThere}" ]]; then
-				echo "Plik ${isThere##*/} już istnieje: ${isThere}"
+			if [[ "${is_there}" ]]; then
+				echo "Plik ${is_there##*/} już istnieje: ${is_there}"
 			else
-				make_dir "${episodeTitle}"
-				mkdir -p "${outDir}/${seriesTitle}/${seasonNumber}"
-				echo "Pobieram ${seriesTitle} - ${episodeTitle} z ${myVod}..."
-				if [[ "${myVod}" == 'vidoza' || "${myVod}" == 'streamtape' || "${myVod}" == 'bigshare' ]] ; then
-					"${myVod}" "${link}"
+				make_dir "${episode_title}"
+				mkdir -p "${out_dir}/${series_title}/${season_number}"
+				echo "Pobieram ${series_title} - ${episode_title} z ${my_vod}..."
+				if [[ "${my_vod}" == 'vidoza' || "${my_vod}" == 'streamtape' ]] ; then
+					"${my_vod}" "${link}"
 				else
-					"${myVod}" "${link}"
+					"${my_vod}" "${link}"
 					#Taka mała magia, żeby mieć fajne dane wejściowe do xargs
-					awk -v dir="${tmpDir}" -v vod="${myVod}" '{printf "%s %s/%03d.ts %s\n", $0, dir, NR, vod}' "${partsList}" > "${partsList}.tmp" && mv -f "${partsList}.tmp" "${partsList}"
+					awk -v dir="${tmp_dir}" -v vod="${my_vod}" '{printf "%s %s/%03d.ts %s\n", $0, dir, NR, vod}' "${parts_list}" > "${parts_list}.tmp" && mv -f "${parts_list}.tmp" "${parts_list}"
 					getVideo
 					saveVideo
 				fi
-				rm -rf "${tmpDir}"
+				rm -rf "${tmp_dir}"
 			fi
 		fi
 
@@ -241,4 +242,4 @@ for file in "${path}"*; do
 
 done
 
-rm -rf "${fTmp}" >/dev/null 2>&1
+rm -rf "${filman_dir}" >/dev/null 2>&1

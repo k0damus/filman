@@ -2,11 +2,11 @@
 
 vidmolyTest(){
 	#TODO: trzeba poprawić to sprawdzanie i doodać jakiś oczekiwanie czasowe
-	dataCheck=$(curl -sL "${1}" --max-time 5 -H "User-Agent: Mozilla/5.0" -H "Referer: https://vidmoly.to/")
-	if [[ -z "${dataCheck}" || "${dataCheck}" == *"notice.php"* ]]; then
-		isOK=false
+	data_check=$(curl -sL "${1}" --max-time 5 -H "User-Agent: Mozilla/5.0" -H "Referer: https://vidmoly.to/")
+	if [[ -z "${data_check}" || "${data_check}" == *"notice.php"* ]]; then
+		is_ok=false
 	else
-		isOK=true
+		is_ok=true
 	fi	
 }
 
@@ -24,16 +24,16 @@ vidmoly(){
 		link="${1}"
 	fi
 	
-	curlOpts=( "-H" "User-Agent: Mozilla/5.0" "-H" "Referer: https://vidmoly.to/" )
+	curl_opts=( "-H" "User-Agent: Mozilla/5.0" "-H" "Referer: https://vidmoly.to/" )
 	app=$( curl -sL "${link}" | grep ^url | cut -d "'" -f2 )
-	fullURL=$( curl -sL ${link/me/net}${app} "${curlOpts[@]}" | grep sources | sed -n 's/^.*:"\(.*\)"}.*$/\1/p' )
-	mainURL=$( echo "${fullURL}" |  tr -d ',' | sed -n 's/\(^.*\)\.urlset.*/\1/p' )
-	partsPATH=($( curl -sL "${fullURL}" "${curlOpts[@]}" | grep index ))
-	if [[ -z "${partsPATH}" ]]; then
-		partsPATH=($( curl -sL "${fullURL}" "${curlOpts[@]}" | grep index | head -n1 | sed -n 's/^.*\(https.*\)"$/\1/p'))
+	full_url=$( curl -sL ${link/me/net}${app} "${curl_opts[@]}" | grep sources | sed -n 's/^.*:"\(.*\)"}.*$/\1/p' )
+	main_url=$( echo "${full_url}" |  tr -d ',' | sed -n 's/\(^.*\)\.urlset.*/\1/p' )
+	parts_path=($( curl -sL "${full_url}" "${curl_opts[@]}" | grep index ))
+	if [[ -z "${parts_path}" ]]; then
+		parts_path=($( curl -sL "${full_url}" "${curl_opts[@]}" | grep index | head -n1 | sed -n 's/^.*\(https.*\)"$/\1/p'))
 	fi
-	if [[ "${#partsPATH[@]}" -gt 1 ]]; then
-		partsPATH="${partsPATH[0]}"
+	if [[ "${#parts_path[@]}" -gt 1 ]]; then
+		parts_path="${parts_path[0]}"
 	fi
-	curl -sL "${partsPATH}" "${curlOpts[@]}" | grep -v ^# > "${partsList}"
+	curl -sL "${parts_path}" "${curl_opts[@]}" | grep -v ^# > "${parts_list}"
 }

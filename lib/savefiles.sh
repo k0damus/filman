@@ -1,17 +1,17 @@
 #!/usr/bin/env bash
 
 savefilesTest(){
-	dataCheck=$( curl -sL "https://savefiles.com/dl?op=embed&file_code=${1##*/}&auto=1" -H "Referer: ${1}" -H "User-Agent: Mozilla/5.0"  )
-	if [[ -z "${dataCheck}" || "${dataCheck}" == *"been deleted"* ]]; then
-		isOK=false
+	data_check=$( curl -sL "https://savefiles.com/dl?op=embed&file_code=${1##*/}&auto=1" -H "Referer: ${1}" -H "User-Agent: Mozilla/5.0"  )
+	if [[ -z "${data_check}" || "${data_check}" == *"been deleted"* ]]; then
+		is_ok=false
 	else
-		isOK=true
+		is_ok=true
 	fi	
 }
 
 savefiles(){
-	partsPATH=$( curl -sL "https://savefiles.com/dl?op=embed&file_code=${1##*/}&auto=1" -H "Referer: ${1}" -H "User-Agent: Mozilla/5.0" | grep sources | sed -n 's/^.*"\(.*\)".*$/\1/p' )
-	partsLINK=$( curl -sL "${partsPATH}" | grep index )
-	mainURL="${partsLINK%/*}"
-	curl -sL "${partsLINK}" | grep -v ^# > "${partsList}"
+	parts_path=$( curl -sL "https://savefiles.com/dl?op=embed&file_code=${1##*/}&auto=1" -H "Referer: ${1}" -H "User-Agent: Mozilla/5.0" | grep sources | sed -n 's/^.*"\(.*\)".*$/\1/p' )
+	parts_link=$( curl -sL "${parts_path}" | grep index )
+	main_url="${parts_link%/*}"
+	curl -sL "${parts_link}" | grep -v ^# > "${parts_list}"
 }

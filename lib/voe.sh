@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 
 voeTest(){
-	# dataCheck=$(curl -sL "${1}" --max-time 5)
-	# if [[ -z "${dataCheck}" || "${dataCheck}" == *"File was deleted"* ]]; then
-	# 	isOK=false
+	# data_check=$(curl -sL "${1}" --max-time 5)
+	# if [[ -z "${data_check}" || "${data_check}" == *"File was deleted"* ]]; then
+	# 	is_ok=false
 	# else
-		isOK=true
+		is_ok=true
 	# fi
 }
 
@@ -82,9 +82,9 @@ voe(){
 	m3u8="$(sed -n 's|.*source":"\([^"]*\)".*|\1|p' <<< "$json_data" | sed 's/\\//g' )"
 # echo $mp4
 # echo $m3u8
-	mainURL="${m3u8/master.*/}"
-	# echo $mainURL
-	partsPATH=$( curl -sL "${m3u8}" | grep ^index )
-# echo $partsPATH
-	curl -sL "${mainURL}${partsPATH}" | grep -v ^# | sed "s|^|${mainURL}|" > "${partsList}"
+	main_url="${m3u8/master.*/}"
+	# echo $main_url
+	parts_path=$( curl -sL "${m3u8}" | grep ^index )
+# echo $parts_path
+	curl -sL "${main_url}${parts_path}" | grep -v ^# | sed "s|^|${main_url}|" > "${parts_list}"
 }
