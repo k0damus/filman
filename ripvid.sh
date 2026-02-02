@@ -24,15 +24,15 @@ reqCheck=()
 req=('/usr/bin/curl' '/usr/bin/openssl')
 
 for r in "${req[@]}"; do
-	[ ! -f "${r}" ] && reqCheck+=("${r}");
+	[[ ! -f "${r}" ]] && reqCheck+=("${r}");
 done
 
-if [ "${#reqCheck[@]}" -gt 0 ]; then
+if [[ "${#reqCheck[@]}" -gt 0 ]]; then
 	echo "Brak tych programów: ${reqCheck[*]} Zainstaluj."
 	exit 1
 fi
 
-if [ ! -d "${outDir}" ]; then
+if [[ ! -d "${outDir}" ]]; then
 	echo "Katalog ${outDir} nie istnieje!"
 	exit 1
 fi
@@ -46,7 +46,7 @@ while getopts ":p:t:" opt; do
 	esac
 done
 
-if [ -z "${path}" ] ; then
+if [[ -z "${path}" ]] ; then
 	echo "Brak / za malo danych."
 	echo "Użycie: ./ripvid.sh -p <sciezka_do_katalogu_z_plikiem/plikami>"
 	exit 1
@@ -87,7 +87,7 @@ vodCheck(){
 		#tu tworzymy tablicę z wszystkimi wynikami pasującymi do: nazwa serialu + typ video + szukany vod
 		testLine=($( grep "${m}" "${file}" | grep "${mediaType}" | grep -E "${vod_regex}" ))
 		#tutaj iterujemy po całej tablicy i wykonujemy wstępne sprawdzenie czy video wogóle istnieje na tym vod czy nie zostało usunięte
-		if [ "${testLine}" ]; then
+		if [[ "${testLine}" ]]; then
 			for line in "${testLine[@]}"; do
 				testVod=$( echo "${line}" | sed -n 's/^.*\/\/\([^.]*\)\..*$/\1/p' )
 				#lulu może być "lulu" ablo "luluvdo", więc zmieniamy
@@ -97,7 +97,7 @@ vodCheck(){
 				echo "Sprawdzam: ${testLink}"
 				"${testVod}"Test "${testLink}"
 				#Jeśli nie mamy błędu to dopisujemy do ostatecznej tablicy lines()
-				if [ "${isOK}" = true ]; then
+				if [[ "${isOK}" = true ]]; then
 					line="${testVod}@${line}"
 					lines+=( "${line}" )
 				fi
@@ -149,7 +149,7 @@ getVideo(){
 #Zapis do odpowiednich katalogów z podziałem na film/serial
 saveVideo(){
 	if ls "${tmpDir}"/*.ts >/dev/null 2>&1; then
-		if [ -z "${seriesCheck}" ]; then
+		if [[ -z "${seriesCheck}" ]]; then
 			cat $(ls "${tmpDir}"/*.ts) > "${outDir}"/"${title}"/"${title}".ts 
 			echo "Film zapisany w ${outDir}/${title}/${title}.ts"
 		else
@@ -177,7 +177,7 @@ for file in "${path}"*; do
 
 		seriesCheck=$( grep 'Serial' <<< "${dataLine}" )
 
-		if [ -z "${seriesCheck}" ]; then
+		if [[ -z "${seriesCheck}" ]]; then
 			pattern='^([a-z]*)@([^@]*)@.*@(.*)'
 			if [[ "${dataLine}" =~ $pattern ]]; then
 				myVod="${BASH_REMATCH[1]}"
@@ -187,7 +187,7 @@ for file in "${path}"*; do
 
 			isThere=$( ls "${outDir}/${title}/${title}".* 2>/dev/null )
 
-			if [ "${isThere}" ]; then
+			if [[ "${isThere}" ]]; then
 				echo "Plik ${isThere##*/} już istnieje: ${isThere}"
 			else
 				make_dir "${title}"
@@ -218,7 +218,7 @@ for file in "${path}"*; do
 
 			isThere=$( ls "${outDir}/${seriesTitle}/${seasonNumber}/${fullEpisodeTitle}".* 2>/dev/null )
 
-			if [ "${isThere}" ]; then
+			if [[ "${isThere}" ]]; then
 				echo "Plik ${isThere##*/} już istnieje: ${isThere}"
 			else
 				make_dir "${episodeTitle}"
