@@ -54,6 +54,7 @@ else
                 for entry in "${tmp_list[@]}"; do
                         vod_link=$( echo "${entry%|*}" | base64 -d | cut -d '"' -f4 | tr -d '\\' )
                         echo "${vod_link}@${entry#*|}@Serial@${series_title_zaluknij}@${episode#*@}" >> "${outdir}"/links
+                        sed -i 's/Polski/PL/g' "${outdir}"/links
                 done
 
         done

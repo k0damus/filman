@@ -28,7 +28,10 @@ search=()
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 for file in "${SCRIPT_DIR}"/lib/*.sh; do
-	[[ -f "${file}" ]] && source "${file}"
+	[[ -e "${file}" ]] || continue
+	# Opcjonalnie: ominąć ukryte pliki zaczynające się od kropki:
+	[[ "$(basename ${file} )" = .* ]] && continue
+	source "${file}"
 	search+=($( basename "${file}" .sh ))
 done
 #search_list - do użycia w grepie jako wyrażenie regularne w funkcji vodCheck
@@ -178,7 +181,8 @@ getVideo(){
 }
 
 #Zapis do odpowiednich katalogów z podziałem na film/serial
-saveVideo(){
+#Ta funkca dotyczy video pobranych w kawałkach *.ts , które trzeba złożyć w 1 plik
+saveVideoTS(){
 	if ls "${tmp_dir}"/*.ts >/dev/null 2>&1; then
 		if [[ -z "${series_check}" ]]; then
 			cat $(ls "${tmp_dir}"/*.ts) > "${out_dir}"/"${title}"/"${title}".ts 
@@ -190,7 +194,26 @@ saveVideo(){
 	else
 		echo "Brak plików *.ts w ${tmp_dir}"
 	fi
+}
 
+#Zapis do odpowiednich katalogów z podziałem na film/serial
+#Ta funkca dotyczy video w formacie mp4 - pobieranie jednego pliku
+#Na początku sprawdzamy wartość nagłówka http - jak inna niż 200 to olewamy
+saveVideoMP4(){
+	local response_code
+	response_code=$( curl -sLI "${video_url}" -H "User-Agent: Mozilla/5.0" | grep HTTP | cut -d ' ' -f2)
+	if [[ "${response_code}" -ne "200" ]]; then
+		:
+	else
+		if [[ "${series_title}" ]] && [[ "${season_number}" ]] && [[ "${episode_title}" ]]; then
+			curl "${video_url}" -H "User-Agent: Mozilla/5.0" -o "${out_dir}"/"${series_title}"/"${season_number}"/"${full_episode_title}".mp4
+			echo "Film zapisany w ${out_dir}/${series_title}/${season_number}/${full_episode_title}.mp4"
+		else
+			[[ ! -d "${out_dir}"/"${title}" ]] && mkdir -p "${out_dir}"/"${title}"
+			curl "${video_url}" -H "User-Agent: Mozilla/5.0" -o "${out_dir}"/"${title}"/"${title}".mp4
+			echo "Film zapisany w ${out_dir}/${title}/${title}.mp4"
+		fi
+	fi
 }
 
 #CZĘŚĆ GŁÓWNA
@@ -226,12 +249,13 @@ for file in "${path}"*; do
 				echo "Pobieram ${title} z ${my_vod}..."
 				if [[ "${my_vod}" == 'vidoza' || "${my_vod}" == 'streamtape' ]] ; then
 					"${my_vod}" "${link}"
+					saveVideoMP4
 				else
 					"${my_vod}" "${link}"
 					#Taka mała magia, żeby mieć fajne dane wejściowe do xargs
 					awk -v dir="${tmp_dir}" -v vod="${my_vod}" '{printf "%s %s/%03d.ts %s\n", $0, dir, NR, vod}' "${parts_list}" > "${parts_list}.tmp" && mv -f "${parts_list}.tmp" "${parts_list}"
 					getVideo
-					saveVideo
+					saveVideoTS
 				fi
 			fi
 
@@ -257,12 +281,13 @@ for file in "${path}"*; do
 				echo "Pobieram ${series_title} - ${episode_title} z ${my_vod}..."
 				if [[ "${my_vod}" == 'vidoza' || "${my_vod}" == 'streamtape' ]] ; then
 					"${my_vod}" "${link}"
+					saveVideoMP4
 				else
 					"${my_vod}" "${link}"
 					#Taka mała magia, żeby mieć fajne dane wejściowe do xargs
 					awk -v dir="${tmp_dir}" -v vod="${my_vod}" '{printf "%s %s/%03d.ts %s\n", $0, dir, NR, vod}' "${parts_list}" > "${parts_list}.tmp" && mv -f "${parts_list}.tmp" "${parts_list}"
 					getVideo
-					saveVideo
+					saveVideoTS
 				fi
 				rm -rf "${tmp_dir}"
 			fi

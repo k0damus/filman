@@ -25,15 +25,17 @@ vidmoly(){
 	fi
 	
 	curl_opts=( "-H" "User-Agent: Mozilla/5.0" "-H" "Referer: https://vidmoly.to/" )
-	app=$( curl -sL "${link}" | grep ^url | cut -d "'" -f2 )
-	full_url=$( curl -sL ${link/me/net}${app} "${curl_opts[@]}" | grep sources | sed -n 's/^.*:"\(.*\)"}.*$/\1/p' )
-	main_url=$( echo "${full_url}" |  tr -d ',' | sed -n 's/\(^.*\)\.urlset.*/\1/p' )
-	parts_path=($( curl -sL "${full_url}" "${curl_opts[@]}" | grep index ))
-	if [[ -z "${parts_path}" ]]; then
-		parts_path=($( curl -sL "${full_url}" "${curl_opts[@]}" | grep index | head -n1 | sed -n 's/^.*\(https.*\)"$/\1/p'))
-	fi
-	if [[ "${#parts_path[@]}" -gt 1 ]]; then
-		parts_path="${parts_path[0]}"
-	fi
+	# app=$( curl -sL "${link}" | grep ^url | cut -d "'" -f2 )
+	m3u8=$( curl -sL "${link}" | grep m3u8 | cut -d "'" -f2 )
+	parts_path=$( curl -sL "${m3u8}" | grep ^https | head -n1 )
+	# full_url=$( curl -sL ${link/me/net}${app} "${curl_opts[@]}" | grep sources | sed -n 's/^.*:"\(.*\)"}.*$/\1/p' )
+	# main_url=$( echo "${full_url}" |  tr -d ',' | sed -n 's/\(^.*\)\.urlset.*/\1/p' )
+	# parts_path=($( curl -sL "${full_url}" "${curl_opts[@]}" | grep index ))
+	# if [[ -z "${parts_path}" ]]; then
+	# 	parts_path=($( curl -sL "${full_url}" "${curl_opts[@]}" | grep index | head -n1 | sed -n 's/^.*\(https.*\)"$/\1/p'))
+	# fi
+	# if [[ "${#parts_path[@]}" -gt 1 ]]; then
+	# 	parts_path="${parts_path[0]}"
+	# fi
 	curl -sL "${parts_path}" "${curl_opts[@]}" | grep -v ^# > "${parts_list}"
 }
