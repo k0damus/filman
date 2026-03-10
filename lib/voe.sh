@@ -23,6 +23,7 @@ shift_chars() {
 	perl -pe "s/(.)/chr(ord(\$1)-${shift})/ge"
 }
 
+
 #Odszfrowywanie zaśmieconego JSONa przy pomocy perl'a - szybka akcja
 deobfuscate_perl() {
 	local json="${1}"
