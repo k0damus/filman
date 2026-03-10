@@ -25,7 +25,7 @@ if (result) {
 
     // tytul serialu
     let s = document.querySelectorAll('h2')
-    let seriesTitle = s[0].innerText.replace(/ /g,'_').replace(/[:-]/g,"").replace(/\//g,"").replace(/__/g,"_");
+    let seriesTitle = s[0].innerText.replace(/[ ,']/g, "_").replace(/[:\/-]/g, "");
 
     // tytul + oznaczenie odcina
     let t = document.querySelectorAll('h3');
@@ -53,7 +53,7 @@ if (result) {
     videoType = 'Film';
 
     let t = document.querySelectorAll('h1')
-    let movieTitle = t[0].innerText.replace(/online.pl/g,'').replace(/ /g,'_').replace(/[:-]/g,"").replace(/\//g,"").replace(/__/g,"_");
+    let movieTitle = t[0].innerText.replace(/online.pl/g,'').replace(/[ ,']/g, "_").replace(/[:\/-]/g, "");;
 
     let l = document.getElementById('links');
 

@@ -111,6 +111,21 @@ make_dir(){
 	touch "${tmp_dir}"/parts.txt
 	parts_list="${tmp_dir}"/parts.txt
 }
+#Tablica z funkcami do testów voe
+declare -A test_fn=([voe]='voeTest' \
+					[vidoza]='vidozaTest' \
+					[lulustream]='lulustreamTest' \
+					[savefiles]='savefilesTest' \
+					[vidmoly]='vidmolyTest' \
+					[streamtape]='streamtapeTest'
+)
+#Tablica z funkcami do pobierania z voe
+declare -A get_fn=([voe]='voe' \
+					[vidoza]='vidoza' \
+					[lulustream]='lulustream' \
+					[savefiles]='savefiles' \
+					[vidmoly]='vidmoly' \
+					[streamtape]='streamtape' )
 
 #Sprawdzamy z którego serwisu możemy pobrać dany film, tzn. czy w ogóle są dostępne linki.
 vodCheck(){
@@ -129,7 +144,8 @@ vodCheck(){
 				test_link=$( echo "${line}" | cut -d "@" -f1 )
 				#testujemy
 				echo "Sprawdzam: ${test_link}"
-				"${test_vod}"Test "${test_link}"
+				# "${test_vod}"Test "${test_link}"
+				"${test_fn[${test_vod}]}" "${test_link}"
 				#Jeśli nie mamy błędu to dopisujemy do ostatecznej tablicy lines()
 				if [[ "${is_ok}" = true ]]; then
 					line="${test_vod}@${line}"
@@ -185,9 +201,11 @@ getVideo(){
 saveVideoTS(){
 	if ls "${tmp_dir}"/*.ts >/dev/null 2>&1; then
 		if [[ -z "${series_check}" ]]; then
+			mkdir -p "${out_dir}/${title}"
 			cat $(ls "${tmp_dir}"/*.ts) > "${out_dir}"/"${title}"/"${title}".ts 
 			echo "Film zapisany w ${out_dir}/${title}/${title}.ts"
 		else
+			mkdir -p "${out_dir}/${series_title}/${season_number}"
 	    	cat "${tmp_dir}"/*.ts > "${out_dir}/${series_title}/${season_number}/${full_episode_title}.ts"
     		echo "Film zapisany w ${out_dir}/${series_title}/${season_number}/${full_episode_title}.ts"
 		fi
@@ -245,13 +263,12 @@ for file in "${path}"*; do
 				echo "Plik ${is_there##*/} już istnieje: ${is_there}"
 			else
 				make_dir "${title}"
-				mkdir -p "${out_dir}/${title}"
 				echo "Pobieram ${title} z ${my_vod}..."
 				if [[ "${my_vod}" == 'vidoza' || "${my_vod}" == 'streamtape' ]] ; then
-					"${my_vod}" "${link}"
+					"${get_fn[${my_vod}]}" "${link}"
 					saveVideoMP4
 				else
-					"${my_vod}" "${link}"
+					"${get_fn[${my_vod}]}" "${link}"
 					#Taka mała magia, żeby mieć fajne dane wejściowe do xargs
 					awk -v dir="${tmp_dir}" -v vod="${my_vod}" '{printf "%s %s/%03d.ts %s\n", $0, dir, NR, vod}' "${parts_list}" > "${parts_list}.tmp" && mv -f "${parts_list}.tmp" "${parts_list}"
 					getVideo
@@ -277,13 +294,12 @@ for file in "${path}"*; do
 				echo "Plik ${is_there##*/} już istnieje: ${is_there}"
 			else
 				make_dir "${episode_title}"
-				mkdir -p "${out_dir}/${series_title}/${season_number}"
 				echo "Pobieram ${series_title} - ${episode_title} z ${my_vod}..."
 				if [[ "${my_vod}" == 'vidoza' || "${my_vod}" == 'streamtape' ]] ; then
-					"${my_vod}" "${link}"
+					"${get_fn[${my_vod}]}" "${link}"
 					saveVideoMP4
 				else
-					"${my_vod}" "${link}"
+					"${get_fn[${my_vod}]}" "${link}"
 					#Taka mała magia, żeby mieć fajne dane wejściowe do xargs
 					awk -v dir="${tmp_dir}" -v vod="${my_vod}" '{printf "%s %s/%03d.ts %s\n", $0, dir, NR, vod}' "${parts_list}" > "${parts_list}.tmp" && mv -f "${parts_list}.tmp" "${parts_list}"
 					getVideo
