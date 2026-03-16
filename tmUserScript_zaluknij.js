@@ -25,12 +25,13 @@ if (result) {
 
     // tytul serialu
     let s = document.querySelectorAll('h2')
-    let seriesTitle = s[1].innerText.replace(/ /g,'_').replace(/[:-]/g,"").replace(/\//g,"").replace(/'/g,"_").replace(/__/g,"_").replace(/_Sezon.*$/, '');
+    //let seriesTitle = s[1].innerText.replace(/ /g,'_').replace(/[:-]/g,"").replace(/\//g,"").replace(/__/g,"_").replace(/_Sezon.*$/, '');
+    let seriesTitle = s[1].innerText.split('/')[0].trim().replace(/ /g,'_').replace(/[:-]/g,"").replace(/\//g,"").replace(/__/g,"_").replace(/_Sezon.*$/, '');
 
     // tytul + oznaczenie odcina
     let t = document.querySelectorAll('h3');
     let episodeTitleTemp = t[0].innerText.replace(/ /g,"_").replace(/\[|\]/g,"");
-    let parts = episodeTitleTemp.match(/(s\d{2})(e\d{2,})_(.*)/);
+    let parts = episodeTitleTemp.match(/(s\d{2})(e\d{2})_(.*)/);
     let episodeTitleFormatted = `_${parts[1]}_${parts[2]}@${parts[3]}`;
 
     // linki i typ filmu (lektor/napisy/etc)
@@ -47,7 +48,8 @@ if (result) {
     videoType = 'Film';
 
     let t = document.querySelectorAll('h2')
-    let movieTitle = t[1].innerText.replace(/ /g,'_').replace(/[:-]/g,"").replace(/\//g,"").replace(/'/g,"_").replace(/__/g,"_");
+    //let movieTitle = t[1].innerText.replace(/ /g,'_').replace(/[:-]/g,"").replace(/\//g,"").replace(/__/g,"_");
+    let movieTitle = t[1].innerText.split('/')[0].trim().replace(/ /g,'_').replace(/[:-]/g,"").replace(/\//g,"").replace(/__/g,"_");
 
     let l = document.getElementById('link-list');
 
