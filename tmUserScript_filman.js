@@ -50,7 +50,7 @@ if (result) {
     videoType = 'Film';
 
     let t = document.querySelectorAll('h1')
-    
+    let movieTitle = t[0].innerText.replace(/online.pl/g,'').split('/')[0].trim().replace(/[ ,']/g, "_").replace(/[:\/-]/g, "");;
 
     let l = document.getElementById('links');
 
