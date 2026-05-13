@@ -43,13 +43,13 @@ vod_regex=$(IFS='|'; echo "${search_list[*]}")
 #filman_dir=TU-WPISZ-SWOJĄ-ŚCIEŻKĘ-DO-OBRÓBKI-PLIKÓW-TYMCZASOWYCH
 
 #Zmienne gówne
-out_dir="${HOME}"/minidlna/torrent/complete
+out_dir='/srv/FILMY'
 filman_dir='/tmp/filman'
 user_media_type=''
 req_check=()
 
 #Początkowe sprawdzanie
-req=('/usr/bin/curl' '/usr/bin/openssl')
+req=('/usr/bin/curl' '/usr/bin/openssl' '/usr/bin/ffmpeg')
 
 for r in "${req[@]}"; do
 	[[ ! -f "${r}" ]] && req_check+=("${r}");
@@ -94,15 +94,15 @@ case "${user_media_type}" in
 esac
 
 #Na początek: łapiemy CTRL + C i usuwamy nasz katalog $filman_dir w razie czego
-cleanup() {
-	echo
-	echo "Sprzątamy..."
-	rm -rf "${filman_dir}"
-	echo
-	exit 1
-}
+# cleanup() {
+# 	echo
+# 	echo "Sprzątamy..."
+# 	rm -rf "${filman_dir}"
+# 	echo
+# 	exit 1
+# }
 
-trap "cleanup" SIGINT SIGTERM
+# trap "cleanup" SIGINT SIGTERM
 
 #Tworzmy katalog tymczasowy do ściągania części filmu / odcinka serialu
 make_dir(){
@@ -117,7 +117,8 @@ declare -A test_fn=([voe]='voeTest' \
 					[lulustream]='lulustreamTest' \
 					[savefiles]='savefilesTest' \
 					[vidmoly]='vidmolyTest' \
-					[streamtape]='streamtapeTest'
+					[streamtape]='streamtapeTest' \
+					[vidara]='vidaraTest'
 )
 #Tablica z funkcami do pobierania z voe
 declare -A get_fn=([voe]='voe' \
@@ -125,7 +126,9 @@ declare -A get_fn=([voe]='voe' \
 					[lulustream]='lulustream' \
 					[savefiles]='savefiles' \
 					[vidmoly]='vidmoly' \
-					[streamtape]='streamtape' )
+					[streamtape]='streamtape' \
+					[vidara]='vidara'
+)
 
 #Sprawdzamy z którego serwisu możemy pobrać dany film, tzn. czy w ogóle są dostępne linki.
 vodCheck(){
@@ -270,7 +273,7 @@ for file in "${path}"*; do
 				else
 					"${get_fn[${my_vod}]}" "${link}"
 					#Taka mała magia, żeby mieć fajne dane wejściowe do xargs
-					awk -v dir="${tmp_dir}" -v vod="${my_vod}" '{printf "%s %s/%03d.ts %s\n", $0, dir, NR, vod}' "${parts_list}" > "${parts_list}.tmp" && mv -f "${parts_list}.tmp" "${parts_list}"
+					awk -v dir="${tmp_dir}" -v vod="${my_vod}" '{printf "%s %s/%04d.ts %s\n", $0, dir, NR, vod}' "${parts_list}" > "${parts_list}.tmp" && mv -f "${parts_list}.tmp" "${parts_list}"
 					getVideo
 					saveVideoTS
 				fi
@@ -301,7 +304,7 @@ for file in "${path}"*; do
 				else
 					"${get_fn[${my_vod}]}" "${link}"
 					#Taka mała magia, żeby mieć fajne dane wejściowe do xargs
-					awk -v dir="${tmp_dir}" -v vod="${my_vod}" '{printf "%s %s/%03d.ts %s\n", $0, dir, NR, vod}' "${parts_list}" > "${parts_list}.tmp" && mv -f "${parts_list}.tmp" "${parts_list}"
+					awk -v dir="${tmp_dir}" -v vod="${my_vod}" '{printf "%s %s/%04d.ts %s\n", $0, dir, NR, vod}' "${parts_list}" > "${parts_list}.tmp" && mv -f "${parts_list}.tmp" "${parts_list}"
 					getVideo
 					saveVideoTS
 				fi
