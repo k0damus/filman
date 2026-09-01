@@ -68,8 +68,8 @@ perl_check(){
 
 voe(){
 	local link="${1}"
-	step1=`curl -sL "${link}" | sed -n "s/^.*\(https.*\)';.*$/\1/p" | head -n1`
-	step2=`curl -sL "${step1}" | sed -n 's/^.*json">\(.*\)<\/script>/\1/p' `
+	step1=$( curl -sL "${link}" | sed -n "s/^.*\(https.*\)';.*$/\1/p" | head -n1 )
+	step2=$( curl -sL "${step1}" | sed -n 's/^.*json">\(.*\)<\/script>/\1/p'  )
 
 	#Sprawdzimy czym to odkodować - w zależności czy znajdzemy w systemie perl'a czy nie 
 	perl_check

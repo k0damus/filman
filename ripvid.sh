@@ -14,6 +14,7 @@ Opcje:
                 - d/D - dubbing
                 - e/E - angielski
                 - l/L - lektor
+  -z <tak/nie>	(opcjonalne) zostaw/usuń pliki i foldery tymczasowe celem debugowania
 
 Przykład:
   ${prog} -p /tmp/mydata -t l
@@ -65,10 +66,11 @@ if [[ ! -d "${out_dir}" ]]; then
 	exit 1
 fi
 
-while getopts ":p:t:" opt; do
+while getopts ":p:t:z:" opt; do
 	case "${opt}" in
 		p) path="${OPTARG}" ;;
 		t) user_media_type="${OPTARG}" ;;
+		z) zostaw="${OPTARG}" ;;
 		:) echo "Opcja -${OPTARG} wymaga argumentu." ; usage ; exit 1 ;;
 		?) echo "Niewłaściwa opcja: -${OPTARG}." ; usage ; exit 1 ;;
 	esac
@@ -222,8 +224,9 @@ saveVideoTS(){
 #Na początku sprawdzamy wartość nagłówka http - jak inna niż 200 to olewamy
 saveVideoMP4(){
 	local response_code
-	response_code=$( curl -sLI "${video_url}" -H "User-Agent: Mozilla/5.0" | grep HTTP | cut -d ' ' -f2)
-	if [[ "${response_code}" -ne "200" ]]; then
+	response_code=$( curl -sLI "${video_url}" -H "User-Agent: Mozilla/5.0" | grep HTTP | cut -d ' ' -f2 | head -n1)
+
+	if [[ -z "${response_code}" ]] || [[ "${response_code}" -ne "200" ]] ; then
 		:
 	else
 		if [[ "${series_title}" ]] && [[ "${season_number}" ]] && [[ "${episode_title}" ]]; then
@@ -316,4 +319,8 @@ for file in "${path}"*; do
 
 done
 
-rm -rf "${filman_dir}" >/dev/null 2>&1
+if [[ "${zostaw}" == 'nie' ]] ; then
+	rm -rf "${filman_dir}" >/dev/null 2>&1
+else
+	:
+fi
